@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@id/navigation_maps">
+
+    <fragment
+        android:id="@+id/navigation_surrounding"
+        android:name="com.lumi.android.bicyclemap.ui.surrounding.SurroundingFragment"
+        android:label="@string/title_surrounding"
+        tools:layout="@layout/fragment_surrounding" >
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_maps"
+        android:name="com.lumi.android.bicyclemap.ui.home.MapsFragment"
+        android:label="@string/title_maps"
+        tools:layout="@layout/fragment_maps" >
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_course"
+        android:name="com.lumi.android.bicyclemap.ui.course.CourseFragment"
+        android:label="@string/title_course"
+        tools:layout="@layout/fragment_course" >
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_course_detail"
+        android:name="com.lumi.android.bicyclemap.ui.course.CourseDetailFragment"
+        android:label="Course Detail"
+        tools:layout="@layout/fragment_course_detail" >
+    </fragment>
+
+</navigation>

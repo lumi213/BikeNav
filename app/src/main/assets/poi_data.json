@@ -1,0 +1,44 @@
+{
+  "Toilet": [
+    {
+      "id": 100000,
+      "name": "옛터숯불갈비 개방화장실",
+      "image": "old_charcoal_grilled_ribs.jpg",
+      "explanation": "음식점 옛터숯불갈비 개방화장실",
+      "point": { "lat": 37.3684098, "lng": 127.9380764 }
+    }
+  ],
+  "Cafe": [
+    {
+      "id": 200000,
+      "name": "이디야 우산점",
+      "image": "ediya.jpg",
+      "explanation": "카페 체인점 이디야 우산동 지점",
+      "point": { "lat": 37.3690119, "lng": 127.9369768 }
+    },
+    {
+      "id": 200001,
+      "name": "컴포즈커피 원주상지대길점",
+      "image": "compose_coffee.jpg",
+      "explanation": "카페 체인점 컴포즈커피 원주시 상지대길 지점",
+      "point": { "lat": 37.3691974, "lng": 127.939873 }
+
+    }
+  ],
+  "Restaurant": [
+    {
+      "id": 300000,
+      "name": "롯데리아 원주우산점",
+      "image": "lotteria.jpg",
+      "explanation": "버거 체인점 롯데리아 원주시 우산동 지점",
+      "point": { "lat": 37.3698599, "lng": 127.9370879 }
+    },
+    {
+      "id": 300001,
+      "name": "맘스터치 상지대점",
+      "image": "mons_touch.png",
+      "explanation": "버거 체인점 맘스터치 상지대 지점",
+      "point": { "lat": 37.36977, "lng": 127.9273826 }
+    }
+  ]
+}

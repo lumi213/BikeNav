@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/white"
+    android:padding="16dp">
+
+    <!-- 🔍 검색창 -->
+    <EditText
+        android:id="@+id/search_input"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:hint="어떤 코스를 찾으세요?"
+        android:drawableStart="@android:drawable/ic_menu_search"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:inputType="text"
+        android:textSize="14sp"
+        android:drawablePadding="8dp" />
+
+    <!-- 🏷️ 태그 필터 -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/tag_chip_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        app:singleSelection="false"
+        app:selectionRequired="false"
+        app:chipSpacingHorizontal="8dp">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_mountain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:text="북한산" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_village"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:text="한옥마을 산책길" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:text="풍경" />
+    </com.google.android.material.chip.ChipGroup>
+
+    <!-- 📋 코스 리스트 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/course_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="16dp"
+        android:clipToPadding="false" />
+</LinearLayout>

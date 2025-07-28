@@ -1,0 +1,61 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- 구글맵 Fragment -->
+    <fragment
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 상단 탭 버튼 -->
+    <RadioGroup
+        android:id="@+id/typeRadioGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="top|left"
+        android:layout_marginTop="16dp"
+        android:layout_marginLeft="16dp"
+        android:background="@android:color/transparent"
+        android:padding="4dp">
+
+        <RadioButton
+            android:id="@+id/radio_walk"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="산책길"
+            android:textColor="@color/selector_text"
+            android:button="@null"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="8dp"
+            android:layout_marginEnd="8dp" />
+
+        <RadioButton
+            android:id="@+id/radio_bike"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="자전거길"
+            android:textColor="@color/selector_text"
+            android:button="@null"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="8dp" />
+    </RadioGroup>
+
+
+    <!-- 하단 슬라이더 (ViewPager or RecyclerView) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/routeRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_gravity="top"
+        android:layout_marginTop="90dp"
+        android:visibility="gone"
+        android:clipToPadding="false"
+        android:paddingHorizontal="12dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:orientation="horizontal"
+        android:background="#AAFFFFFF" />
+</FrameLayout>
