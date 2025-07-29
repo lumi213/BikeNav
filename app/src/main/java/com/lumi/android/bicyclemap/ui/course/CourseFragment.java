@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import com.lumi.android.bicyclemap.MainActivity;
 import com.lumi.android.bicyclemap.MainViewModel;
 import com.lumi.android.bicyclemap.R;
 import com.lumi.android.bicyclemap.Route;
@@ -85,7 +86,7 @@ public class CourseFragment extends Fragment implements CourseAdapter.OnCourseCl
 
         List<Route> filtered = new ArrayList<>();
         for (Route r : allCourses) {
-            boolean matchesKeyword = r.name.toLowerCase(Locale.ROOT).contains(keyword);
+            boolean matchesKeyword = r.title.toLowerCase(Locale.ROOT).contains(keyword);
             boolean matchesTag = (tag == null);
             if (tag != null && r.category != null) {
                 for (String c : r.category) {
@@ -105,10 +106,14 @@ public class CourseFragment extends Fragment implements CourseAdapter.OnCourseCl
 
     @Override
     public void onCourseClick(Route route) {
-        Bundle args = new Bundle();
-        args.putSerializable("route", route);
+        CourseDetailFragment detailFragment = new CourseDetailFragment();
 
-        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-        navController.navigate(R.id.navigation_course_detail, args);
+        // route 정보를 넘기고 싶다면 Bundle로 설정
+        Bundle bundle = new Bundle();
+        bundle.putSerializable("route", route);
+        detailFragment.setArguments(bundle);
+
+        // MainActivity의 replaceFragment를 통해 디테일 프래그먼트로 이동
+        ((MainActivity) requireActivity()).replaceFragment(detailFragment, true);
     }
 }

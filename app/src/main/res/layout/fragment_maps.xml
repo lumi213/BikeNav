@@ -9,6 +9,65 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- ★ 산책 상태 정보창 (기본은 GONE, 필요시 VISIBLE) -->
+    <LinearLayout
+        android:id="@+id/routeInfoLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:layout_gravity="top"
+        android:layout_marginTop="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:elevation="4dp"
+        android:background="#77ffffff"
+        android:visibility="gone">
+
+        <!-- 코스명 및 정보 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/text_route_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="코스명"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="@android:color/black" />
+
+            <TextView
+                android:id="@+id/text_route_dist_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="거리 0Km · 0분"
+                android:textSize="14sp"
+                android:textColor="@android:color/darker_gray" />
+        </LinearLayout>
+
+        <!-- 남은 거리 박스 -->
+        <TextView
+            android:id="@+id/text_remaining_distance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="18dp"
+            android:paddingRight="18dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:layout_marginStart="12dp"
+            android:text="남은 거리 6.5Km"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="15sp" />
+    </LinearLayout>
+
     <!-- 상단 탭 버튼 -->
     <RadioGroup
         android:id="@+id/typeRadioGroup"
@@ -43,8 +102,7 @@
             android:paddingVertical="8dp" />
     </RadioGroup>
 
-
-    <!-- 하단 슬라이더 (ViewPager or RecyclerView) -->
+    <!-- 하단 슬라이더 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/routeRecyclerView"
         android:layout_width="match_parent"
@@ -56,6 +114,5 @@
         android:paddingHorizontal="12dp"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
-        android:orientation="horizontal"
-        android:background="#AAFFFFFF" />
+        android:orientation="horizontal" />
 </FrameLayout>

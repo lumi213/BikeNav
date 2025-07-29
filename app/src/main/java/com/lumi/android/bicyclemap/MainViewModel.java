@@ -9,6 +9,17 @@ import java.util.Map;
 
 public class MainViewModel extends ViewModel {
 
+    // === 앱 전역 상태 ===
+    public enum MapState {
+        GENERAL,    // 코스 선택 모드
+        WALKING     // 산책/진행 모드
+    }
+
+    // 전역 상태 관리 LiveData
+    private final MutableLiveData<MapState> mapState = new MutableLiveData<>(MapState.GENERAL);
+    public LiveData<MapState> getMapState() { return mapState; }
+    public void setMapState(MapState state) { mapState.setValue(state); }
+
     // 전체 경로 리스트
     private final MutableLiveData<List<Route>> allRoutes = new MutableLiveData<>();
 
@@ -42,5 +53,11 @@ public class MainViewModel extends ViewModel {
 
     public void setSelectedRoute(Route route) {
         selectedRoute.setValue(route);
+    }
+
+    // (선택) 상태 초기화 등 유틸 메서드
+    public void resetMapState() {
+        mapState.setValue(MapState.GENERAL);
+        selectedRoute.setValue(null);
     }
 }

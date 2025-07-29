@@ -17,73 +17,122 @@ import com.lumi.android.bicyclemap.MainViewModel;
 import com.lumi.android.bicyclemap.POI;
 import com.lumi.android.bicyclemap.POIAdapter;
 import com.lumi.android.bicyclemap.R;
-import com.lumi.android.bicyclemap.Route;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class SurroundingFragment extends Fragment {
 
-    private MainViewModel viewModel;
-    private POIAdapter adapter;
+    private SurroundingViewModel viewModel;
+    private MainViewModel mainViewModel;
     private RecyclerView recyclerView;
-    private String currentCategory = null; // 전체 보기 상태
-    private MaterialButtonToggleGroup toggleGroup;
+    private POIAdapter adapter;
+
+    private enum FilterCategory {
+        ALL, RESTAURANT, CAFE, TOILET
+    }
+
+    private FilterCategory currentFilter = FilterCategory.ALL;
+    private List<POI> latestPoiList = new ArrayList<>();
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_surrounding, container, false);
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_surrounding, container, false);
+    }
 
-        viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+    @Override
+    public void onViewCreated(@NonNull View view,
+                              @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        viewModel = new ViewModelProvider(requireActivity()).get(SurroundingViewModel.class);
+        mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         recyclerView = view.findViewById(R.id.poi_recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+
+        // ★ POIAdapter 사용 (item_poi.xml)
         adapter = new POIAdapter();
         recyclerView.setAdapter(adapter);
 
-        toggleGroup = view.findViewById(R.id.category_toggle_group);
-
-        toggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-            if (!isChecked) {
-                currentCategory = null; // 전체 보기
-                filterPOIList();
-                return;
-            }
-
-            if (checkedId == R.id.btn_filter_restaurant) {
-                currentCategory = "Restaurant";
-            } else if (checkedId == R.id.btn_filter_cafe) {
-                currentCategory = "Cafe";
-            } else if (checkedId == R.id.btn_filter_toilet) {
-                currentCategory = "Toilet";
-            }
-            filterPOIList();
-        });
-
-        // 선택된 경로가 바뀌면 다시 필터 적용
-        viewModel.getSelectedRoute().observe(getViewLifecycleOwner(), route -> {
+        // 선택된 Route의 POI 정보 ViewModel에 전달
+        mainViewModel.getSelectedRoute().observe(getViewLifecycleOwner(), route -> {
             if (route != null) {
+                List<String> poiIdStrings = new ArrayList<>();
+                if (route.getPoi() != null) {
+                    for (Integer id : route.getPoi()) {
+                        poiIdStrings.add(String.valueOf(id));
+                    }
+                }
+                Map<Integer, POI> intMap = mainViewModel.getPoiMap().getValue();
+                if (intMap != null) {
+                    Map<String, POI> stringMap = new HashMap<>();
+                    for (Map.Entry<Integer, POI> entry : intMap.entrySet()) {
+                        stringMap.put(String.valueOf(entry.getKey()), entry.getValue());
+                    }
+                    viewModel.setPoiMap(stringMap);
+                }
+                viewModel.setSelectedPoiIds(poiIdStrings);
+            }
+        });
+
+        viewModel.getPoiList().observe(getViewLifecycleOwner(), poiList -> {
+            if (poiList != null) {
+                latestPoiList = poiList;
                 filterPOIList();
             }
         });
 
-        return view;
+        MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.category_toggle_group);
+        toggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (isChecked) {
+                if (checkedId == R.id.btn_filter_restaurant) {
+                    currentFilter = FilterCategory.RESTAURANT;
+                } else if (checkedId == R.id.btn_filter_cafe) {
+                    currentFilter = FilterCategory.CAFE;
+                } else if (checkedId == R.id.btn_filter_toilet) {
+                    currentFilter = FilterCategory.TOILET;
+                } else {
+                    currentFilter = FilterCategory.ALL;
+                }
+                filterPOIList();
+            } else {
+                if (group.getCheckedButtonId() == View.NO_ID) {
+                    currentFilter = FilterCategory.ALL;
+                    filterPOIList();
+                }
+            }
+        });
     }
 
     private void filterPOIList() {
-        Route route = viewModel.getSelectedRoute().getValue();
-        Map<Integer, POI> poiMap = viewModel.getPoiMap().getValue();
-        if (route == null || poiMap == null) return;
-
-        List<POI> result = new ArrayList<>();
-        for (int id : route.getPoi()) {
-            POI poi = poiMap.get(id);
-            if (poi != null && (currentCategory == null || poi.category.equals(currentCategory))) {
-                result.add(poi);
-            }
+        List<POI> filteredList = new ArrayList<>();
+        switch (currentFilter) {
+            case RESTAURANT:
+                for (POI poi : latestPoiList)
+                    if ("Restaurant".equalsIgnoreCase(poi.getCategory()) || "음식점".equals(poi.getCategory()))
+                        filteredList.add(poi);
+                break;
+            case CAFE:
+                for (POI poi : latestPoiList)
+                    if ("Cafe".equalsIgnoreCase(poi.getCategory()) || "카페".equals(poi.getCategory()))
+                        filteredList.add(poi);
+                break;
+            case TOILET:
+                for (POI poi : latestPoiList)
+                    if ("Toilet".equalsIgnoreCase(poi.getCategory()) || "화장실".equals(poi.getCategory()))
+                        filteredList.add(poi);
+                break;
+            case ALL:
+            default:
+                filteredList = latestPoiList;
+                break;
         }
-        adapter.submitList(result);
+        adapter.submitList(filteredList);
     }
 }

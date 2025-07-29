@@ -1,15 +1,23 @@
 package com.lumi.android.bicyclemap;
 
 import android.os.Bundle;
+import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavController;
-import androidx.navigation.fragment.NavHostFragment;
-import androidx.navigation.ui.NavigationUI;
+import androidx.fragment.app.FragmentTransaction;
+
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.lumi.android.bicyclemap.ui.course.CourseFragment;
+import com.lumi.android.bicyclemap.ui.home.MapsFragment;
+import com.lumi.android.bicyclemap.ui.surrounding.SurroundingFragment;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,12 +29,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 public class MainActivity extends AppCompatActivity {
 
     private MainViewModel viewModel;
+    private BottomNavigationView bottomNavigationView;
+    private long lastBackPressedTime = 0;
+    private static final int BACK_PRESS_INTERVAL = 2000; // 2초
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,19 +47,73 @@ public class MainActivity extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 
-        // 1. JSON 로드 후 ViewModel에 저장
+        // 데이터 로드
         List<Route> routes = loadRoutesFromJson();
         Map<Integer, POI> poiMap = loadPoiFromJson();
 
         viewModel.setAllRoutes(routes);
         viewModel.setPoiMap(poiMap);
 
-        // 2. 네비게이션 설정
-        BottomNavigationView navView = findViewById(R.id.nav_view);
-        NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.nav_host_fragment_activity_main);
-        NavController navController = navHostFragment.getNavController();
-        NavigationUI.setupWithNavController(navView, navController);
+        // 네비게이션 설정
+        bottomNavigationView = findViewById(R.id.nav_view);
+
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.navigation_course) {
+                viewModel.setMapState(MainViewModel.MapState.GENERAL); // 코스탭에서는 항상 GENERAL
+                replaceFragment(new CourseFragment(), false);
+                return true;
+            } else if (itemId == R.id.navigation_maps) {
+                // 상태는 기존 유지(코스선택/산책모드 등)
+                replaceFragment(new MapsFragment(), false);
+                return true;
+            } else if (itemId == R.id.navigation_surrounding) {
+                viewModel.setMapState(MainViewModel.MapState.GENERAL); // 주변탭에서도 항상 GENERAL
+                replaceFragment(new SurroundingFragment(), false);
+                return true;
+            }
+
+            return false;
+        });
+
+        // 초기 화면: 지도탭
+        bottomNavigationView.setSelectedItemId(R.id.navigation_maps);
+    }
+
+    public void replaceFragment(Fragment fragment, boolean addToBackStack) {
+        FragmentManager fm = getSupportFragmentManager();
+        FragmentTransaction transaction = fm.beginTransaction()
+                .replace(R.id.fragment_container, fragment);
+
+        if (addToBackStack) {
+            transaction.addToBackStack(null);
+        }
+
+        transaction.commit();
+    }
+
+    public void setBottomNavigationSelected(int itemId) {
+        bottomNavigationView.setSelectedItemId(itemId);
+    }
+
+    @Override
+    public void onBackPressed() {
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+
+        if (currentFragment instanceof CourseFragment || currentFragment instanceof SurroundingFragment) {
+            bottomNavigationView.setSelectedItemId(R.id.navigation_maps);  // 지도탭으로 이동
+        } else if (currentFragment instanceof MapsFragment) {
+            long now = System.currentTimeMillis();
+            if (now - lastBackPressedTime < BACK_PRESS_INTERVAL) {
+                super.onBackPressed();  // 앱 종료
+            } else {
+                lastBackPressedTime = now;
+                Toast.makeText(this, "한 번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            super.onBackPressed();  // 디테일 등 → 이전 화면 복귀
+        }
     }
 
     private List<Route> loadRoutesFromJson() {
@@ -82,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
                 for (int i = 0; i < array.length(); i++) {
                     JSONObject item = array.getJSONObject(i);
                     POI poi = new Gson().fromJson(item.toString(), POI.class);
-                    poi.category = category;
+                    poi.type = category;
                     result.put(poi.id, poi);
                 }
             }

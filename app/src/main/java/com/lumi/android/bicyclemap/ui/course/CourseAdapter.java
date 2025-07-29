@@ -48,8 +48,8 @@ public class CourseAdapter extends ListAdapter<Route, CourseAdapter.CourseViewHo
     public void onBindViewHolder(@NonNull CourseViewHolder holder, int position) {
         Route route = getItem(position);
 
-        holder.title.setText(route.name);
-        holder.desc.setText("경로 " + route.distance + "km · " + route.time + "분 · " + (route.tourist_point != null && !route.tourist_point.isEmpty() ? route.tourist_point.get(0) : ""));
+        holder.title.setText(route.title);
+        holder.desc.setText("경로 " + route.dist_km + "km · " + route.time + "분 · " + (route.tourist_point != null && !route.tourist_point.isEmpty() ? route.tourist_point.get(0) : ""));
         holder.summary.setText(route.explanation != null ? route.explanation : "");
 
         // 해시태그 동적 추가
@@ -91,7 +91,7 @@ public class CourseAdapter extends ListAdapter<Route, CourseAdapter.CourseViewHo
         }
     }
 
-    public static final DiffUtil.ItemCallback<Route> DIFF_CALLBACK = new DiffUtil.ItemCallback<Route>() {
+    private static final DiffUtil.ItemCallback<Route> DIFF_CALLBACK = new DiffUtil.ItemCallback<Route>() {
         @Override
         public boolean areItemsTheSame(@NonNull Route oldItem, @NonNull Route newItem) {
             return oldItem.id == newItem.id;
@@ -99,11 +99,15 @@ public class CourseAdapter extends ListAdapter<Route, CourseAdapter.CourseViewHo
 
         @Override
         public boolean areContentsTheSame(@NonNull Route oldItem, @NonNull Route newItem) {
-            return oldItem.name.equals(newItem.name)
-                    && oldItem.image.equals(newItem.image)
-                    && oldItem.distance == newItem.distance
-                    && oldItem.time == newItem.time
+            // 기존에 문제였던 부분: null 체크 없이 비교
+            // return oldItem.name.equals(newItem.name) && oldItem.category.equals(newItem.category);
+
+            // ✅ null-safe 비교로 변경
+            boolean sameName = oldItem.title != null && oldItem.title.equals(newItem.title);
+            boolean sameCategory = oldItem.category != null && newItem.category != null
                     && oldItem.category.equals(newItem.category);
+
+            return sameName && sameCategory;
         }
     };
 }

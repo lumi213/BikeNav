@@ -13,7 +13,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.fragment.NavHostFragment;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -24,6 +23,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.lumi.android.bicyclemap.MainActivity;
 import com.lumi.android.bicyclemap.MainViewModel;
 import com.lumi.android.bicyclemap.Point;
 import com.lumi.android.bicyclemap.POI;
@@ -78,8 +78,8 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
                     "drawable", requireContext().getPackageName());
             image.setImageResource(resId);
 
-            title.setText(route.name);
-            info.setText("코스 " + route.distance + "Km · " + route.time + "분 · " +
+            title.setText(route.title);
+            info.setText("코스 " + route.dist_km + "Km · " + route.time + "분 · " +
                     (route.tourist_point != null && !route.tourist_point.isEmpty() ? route.tourist_point.get(0) : ""));
             explanation.setText(route.explanation != null ? route.explanation : "");
 
@@ -116,10 +116,20 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
             }
         }
 
+        // "이 코스로 산책하기" 버튼 클릭 시
         btnNavigate.setOnClickListener(v -> {
-            NavHostFragment.findNavController(this).popBackStack();
+            // 1. 코스 선택 및 상태를 ViewModel에 반영
+            viewModel.setSelectedRoute(route);
+            viewModel.setMapState(MainViewModel.MapState.WALKING);
+
+            // 2. 지도탭으로 전환 (setBottomNavigationSelected만 호출!)
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).setBottomNavigationSelected(R.id.navigation_maps);
+            }
+            // 프래그먼트 직접 교체 X : MainActivity에서 탭 전환시 MapsFragment를 새로 띄움
         });
 
+        // 상세 지도 띄우기
         SupportMapFragment mapFragment = (SupportMapFragment)
                 getChildFragmentManager().findFragmentById(R.id.detail_map);
         if (mapFragment != null) {
@@ -136,12 +146,12 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
     }
 
     private void drawRouteOnMap() {
-        if (map == null || route == null || route.points == null || route.points.isEmpty()) return;
+        if (map == null || route == null || route.path == null || route.path.isEmpty()) return;
 
         PolylineOptions polyline = new PolylineOptions().width(10).color(0xFF1976D2);
         LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
 
-        for (Point p : route.points) {
+        for (Point p : route.path) {
             LatLng latLng = new LatLng(p.lat, p.lng);
             polyline.add(latLng);
             boundsBuilder.include(latLng);

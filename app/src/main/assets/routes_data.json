@@ -1,11 +1,11 @@
 {
   "walk": [
     {
-      "name": "단계천",
+      "title": "단계천",
       "image": "walk_route.jpg",
-      "distance": 1.6,
+      "dist_km": 1.6,
       "time": 25,
-      "points": [
+      "path": [
         { "lat": 37.364834, "lng": 127.938321 },
         { "lat": 37.367982, "lng": 127.939021 },
         { "lat": 37.371784, "lng": 127.940919 },
@@ -18,11 +18,11 @@
       ]
     },
     {
-      "name": "우산로",
+      "title": "우산로",
       "image": "walk_route.jpg",
-      "distance": 1.8,
+      "dist_km": 1.8,
       "time": 28,
-      "points": [
+      "path": [
         { "lat": 37.365177, "lng": 127.935796 },
         { "lat": 37.382842, "lng": 127.939944 }
       ],
@@ -33,11 +33,11 @@
       ]
     },
     {
-      "name": "북원로",
+      "title": "북원로",
       "image": "walk_route.jpg",
-      "distance": 2.2,
+      "dist_km": 2.2,
       "time": 35,
-      "points": [
+      "path": [
         { "lat": 37.361285, "lng": 127.940076 },
         { "lat": 37.363651, "lng": 127.940004 },
         { "lat": 37.370500, "lng": 127.941259 },
@@ -51,11 +51,11 @@
   ],
   "bike": [
     {
-      "name": "상지대",
+      "title": "상지대",
       "image": "bike_route.jpg",
-      "distance": 1.5,
+      "dist_km": 1.5,
       "time": 10,
-      "points": [
+      "path": [
         { "lat": 37.370182, "lng": 127.933936 },
         { "lat": 37.370363, "lng": 127.933101 },
         { "lat": 37.370776, "lng": 127.932654 },
@@ -75,11 +75,11 @@
       ]
     },
     {
-      "name": "북원로",
+      "title": "북원로",
       "image": "bike_route.jpg",
-      "distance": 2.2,
+      "dist_km": 2.2,
       "time": 7,
-      "points": [
+      "path": [
         { "lat": 37.361285, "lng": 127.940076 },
         { "lat": 37.363651, "lng": 127.940004 },
         { "lat": 37.370500, "lng": 127.941259 },

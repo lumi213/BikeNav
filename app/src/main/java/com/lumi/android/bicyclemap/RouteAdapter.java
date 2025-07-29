@@ -37,8 +37,8 @@ public class RouteAdapter extends ListAdapter<Route, RouteAdapter.ViewHolder> {
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Route route = getItem(position);
 
-        holder.title.setText(route.name);
-        holder.info.setText("약 " + route.distance + "km · " + route.time + "분");
+        holder.title.setText(route.title);
+        holder.info.setText("약 " + route.dist_km + "km · " + route.time + "분");
 
         int imageResId = holder.image.getContext().getResources()
                 .getIdentifier(route.image.replace(".jpg", "").replace(".png", ""),
@@ -85,12 +85,12 @@ public class RouteAdapter extends ListAdapter<Route, RouteAdapter.ViewHolder> {
     public static final DiffUtil.ItemCallback<Route> DIFF_CALLBACK = new DiffUtil.ItemCallback<Route>() {
         @Override
         public boolean areItemsTheSame(@NonNull Route oldItem, @NonNull Route newItem) {
-            return oldItem.name.equals(newItem.name);
+            return oldItem.title.equals(newItem.title);
         }
 
         @Override
         public boolean areContentsTheSame(@NonNull Route oldItem, @NonNull Route newItem) {
-            return oldItem.distance == newItem.distance &&
+            return oldItem.dist_km == newItem.dist_km &&
                     oldItem.time == newItem.time &&
                     oldItem.image.equals(newItem.image);
         }

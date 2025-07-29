@@ -4,39 +4,71 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="@android:color/white">
+
+    <!-- 상단 안내 문구 -->
+    <TextView
+        android:id="@+id/surroundingTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="선택한 코스 주변을 살펴보세요!"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#222222"
+        android:paddingTop="28dp"
+        android:paddingBottom="12dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"/>
 
     <!-- 상단 카테고리 필터 버튼 그룹 -->
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/category_toggle_group"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
         app:singleSelection="true"
-        android:layout_marginBottom="12dp">
+        android:layout_marginBottom="18dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_filter_restaurant"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="음식점" />
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="음식점"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"
+            app:cornerRadius="16dp"
+            android:layout_marginEnd="8dp"
+            android:textColor="#444444"
+            android:backgroundTint="#F6F6F6"
+            />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_filter_cafe"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="카페" />
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="카페"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"
+            app:cornerRadius="16dp"
+            android:layout_marginEnd="8dp"
+            android:textColor="#444444"
+            android:backgroundTint="#F6F6F6"
+            />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_filter_toilet"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="화장실" />
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="화장실"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"
+            app:cornerRadius="16dp"
+            android:textColor="#444444"
+            android:backgroundTint="#F6F6F6"
+            />
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- 주변 POI 리스트 -->
@@ -46,6 +78,8 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:clipToPadding="false"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
         android:scrollbars="vertical" />
 
 </LinearLayout>
