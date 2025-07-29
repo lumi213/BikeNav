@@ -1,3 +1,5 @@
+BIOS에서 SVM 가상화 기능 활성화
+
 java version "22" 2024-03-19
 Java(TM) SE Runtime Environment (build 22+36-2370)
 
