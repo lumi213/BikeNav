@@ -10,6 +10,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.lumi.android.bicyclemap.repository.AuthRepository;
+import com.lumi.android.bicyclemap.repository.CourseRepository;
 import com.lumi.android.bicyclemap.ui.course.CourseFragment;
 import com.lumi.android.bicyclemap.ui.home.MapsFragment;
 import com.lumi.android.bicyclemap.ui.surrounding.SurroundingFragment;
@@ -40,6 +42,10 @@ public class MainActivity extends AppCompatActivity {
     private long lastBackPressedTime = 0;
     private static final int BACK_PRESS_INTERVAL = 2000; // 2초
 
+    // Repository들
+    private AuthRepository authRepository;
+    private CourseRepository courseRepository;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,7 +53,12 @@ public class MainActivity extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 
-        // 데이터 로드
+        // Repository 초기화
+        viewModel.initRepository(this);
+        authRepository = new AuthRepository(this);
+        courseRepository = new CourseRepository(this);
+        
+        // 로컬 데이터 로드 (API 실패시 대체용)
         List<Route> routes = loadRoutesFromJson();
         Map<Integer, POI> poiMap = loadPoiFromJson();
 
