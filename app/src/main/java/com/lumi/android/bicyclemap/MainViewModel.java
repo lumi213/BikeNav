@@ -1,8 +1,13 @@
 package com.lumi.android.bicyclemap;
 
+import android.content.Context;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
+
+import com.lumi.android.bicyclemap.api.dto.CourseListResponse;
+import com.lumi.android.bicyclemap.repository.CourseRepository;
 
 import java.util.List;
 import java.util.Map;
@@ -29,6 +34,15 @@ public class MainViewModel extends ViewModel {
     // 선택된 경로
     private final MutableLiveData<Route> selectedRoute = new MutableLiveData<>();
 
+    // Repository
+    private CourseRepository courseRepository;
+
+    // 로딩 상태
+    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
+
+    // 에러 메시지
+    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
+
     // === getter/setter ===
 
     public LiveData<List<Route>> getAllRoutes() {
@@ -53,6 +67,44 @@ public class MainViewModel extends ViewModel {
 
     public void setSelectedRoute(Route route) {
         selectedRoute.setValue(route);
+    }
+
+    public LiveData<Boolean> getIsLoading() {
+        return isLoading;
+    }
+
+    public LiveData<String> getErrorMessage() {
+        return errorMessage;
+    }
+
+    // Repository 초기화 및 API 데이터 로드
+    public void initRepository(Context context) {
+        if (courseRepository == null) {
+            courseRepository = new CourseRepository(context);
+        }
+    }
+
+    // API에서 코스 데이터 로드
+    public void loadCoursesFromApi(String type, String diff, Boolean isRecommended) {
+        if (courseRepository != null) {
+            isLoading.setValue(true);
+            courseRepository.getCourses(type, diff, isRecommended, new CourseRepository.RepositoryCallback<CourseListResponse>() {
+                @Override
+                public void onSuccess(CourseListResponse response) {
+                    isLoading.setValue(false);
+                    if (response.getData() != null) {
+                        // CourseDto를 Route로 변환하는 로직 필요
+                        // allRoutes.setValue(convertedRoutes);
+                    }
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    isLoading.setValue(false);
+                    MainViewModel.this.errorMessage.setValue(errorMessage);
+                }
+            });
+        }
     }
 
     // (선택) 상태 초기화 등 유틸 메서드

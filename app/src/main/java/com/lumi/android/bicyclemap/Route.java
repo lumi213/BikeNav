@@ -18,6 +18,13 @@ public class Route implements Serializable {
     public List<Integer> poi;   // 코스 주변 poi id
     public String explanation;  // 상세 설명
     public List<String> tourist_point;  // 관광 포인트
+    
+    // API
+    public int course_id;       // API의 course_id
+    public String description;  // API의 description
+    public List<String> tags;   // API의 tags
+    public List<String> tourist_spots;  // API의 tourist_spots
+    public List<String> nearby_businesses;  // API의 nearby_businesses
 
     // 선택적으로 getter를 정의
     public String getName() {
