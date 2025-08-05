@@ -19,6 +19,7 @@ import java.util.Map;
 
 public class SurroundingViewModel extends ViewModel {
 
+    // 기존: 선택된 POI ID 관리용
     private final MutableLiveData<List<String>> selectedPoiIds = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<Map<String, POI>> poiMap = new MutableLiveData<>(new HashMap<>());
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
@@ -80,9 +81,14 @@ public class SurroundingViewModel extends ViewModel {
         }
     }
 
+    // 추가: POI 리스트를 직접 관리하는 LiveData
+    private final MutableLiveData<List<POI>> poiList = new MutableLiveData<>(new ArrayList<>());
+
     // 선택된 POI ID 목록
     public void setSelectedPoiIds(List<String> ids) {
         selectedPoiIds.setValue(ids);
+        // id가 갱신되면, poiList는 비워서 아래 getPoiList()가 id 기반으로 동작하게 한다.
+        poiList.setValue(new ArrayList<>()); // 혹은 null로 해도 됨
     }
 
     // 전체 POI Map 설정
@@ -90,18 +96,31 @@ public class SurroundingViewModel extends ViewModel {
         poiMap.setValue(map);
     }
 
-    // 선택된 POI ID에 해당하는 POI 객체들만 추출
+    // 직접 POI 리스트를 세팅하고 싶을 때 (ex: 1km 필터 POI)
+    public void setPoiList(List<POI> list) {
+        poiList.setValue(list);
+        // poiList가 세팅되면 selectedPoiIds를 비워서 id기반 표시 안하게 한다.
+        selectedPoiIds.setValue(new ArrayList<>()); // 혹은 null로 해도 됨
+    }
+
+    // POI 리스트를 반환:
+    // - poiList가 비어 있지 않으면 이 값을 반환
+    // - 비어 있으면 기존 id기반 변환값 반환
     public LiveData<List<POI>> getPoiList() {
-        return Transformations.map(selectedPoiIds, ids -> {
-            Map<String, POI> map = poiMap.getValue();
-            List<POI> result = new ArrayList<>();
-            if (map == null || ids == null) return result;
-            for (String id : ids) {
-                POI poi = map.get(id);
-                if (poi != null) result.add(poi);
+        return Transformations.map(poiList, list -> {
+            if (list != null && !list.isEmpty()) {
+                return list;
+            } else {
+                Map<String, POI> map = poiMap.getValue();
+                List<String> ids = selectedPoiIds.getValue();
+                List<POI> result = new ArrayList<>();
+                if (map == null || ids == null || ids.isEmpty()) return result;
+                for (String id : ids) {
+                    POI poi = map.get(id);
+                    if (poi != null) result.add(poi);
+                }
+                return result;
             }
-            Log.d("Surrounding", "POI 리스트 크기: " + (result != null ? result.size() : -1));
-            return result;
         });
     }
 

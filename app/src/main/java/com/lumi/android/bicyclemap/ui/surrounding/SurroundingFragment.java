@@ -1,17 +1,24 @@
 package com.lumi.android.bicyclemap.ui.surrounding;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.lumi.android.bicyclemap.MainViewModel;
 import com.lumi.android.bicyclemap.POI;
@@ -37,6 +44,9 @@ public class SurroundingFragment extends Fragment {
     private FilterCategory currentFilter = FilterCategory.ALL;
     private List<POI> latestPoiList = new ArrayList<>();
 
+    private FusedLocationProviderClient fusedLocationClient;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1201;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -55,14 +65,16 @@ public class SurroundingFragment extends Fragment {
 
         recyclerView = view.findViewById(R.id.poi_recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-
-        // ★ POIAdapter 사용 (item_poi.xml)
         adapter = new POIAdapter();
         recyclerView.setAdapter(adapter);
 
-        // 선택된 Route의 POI 정보 ViewModel에 전달
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
+
         mainViewModel.getSelectedRoute().observe(getViewLifecycleOwner(), route -> {
+            Log.d("Surrounding", " route: " + route);
             if (route != null) {
+                Log.d("Surrounding","check getSelectedRoute()");
+                // 기존 로직: 경로가 선택된 경우 POI 매핑
                 List<String> poiIdStrings = new ArrayList<>();
                 if (route.getPoi() != null) {
                     for (Integer id : route.getPoi()) {
@@ -77,13 +89,20 @@ public class SurroundingFragment extends Fragment {
                     }
                     viewModel.setPoiMap(stringMap);
                 }
+                Log.d("Surrounding","check setSelectedPoiIds()");
                 viewModel.setSelectedPoiIds(poiIdStrings);
+
+            } else {
+                // 경로가 선택되지 않은 경우 → 현 위치 기준 1km POI만 ViewModel에 넣기
+                Log.d("Surrounding","check getCurrentLocationAndShowNearbyPOI()");
+                getCurrentLocationAndShowNearbyPOI();
             }
         });
 
         viewModel.getPoiList().observe(getViewLifecycleOwner(), poiList -> {
             if (poiList != null) {
                 latestPoiList = poiList;
+                Log.d("Surrounding","check filterPOIList()");
                 filterPOIList();
             }
         });
@@ -108,6 +127,58 @@ public class SurroundingFragment extends Fragment {
                 }
             }
         });
+    }
+
+    /** 현 위치 기준 1km 이내 POI만 ViewModel로 전달 */
+    private void getCurrentLocationAndShowNearbyPOI() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+
+            fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
+                if (location != null) {
+                    double userLat = location.getLatitude();
+                    double userLng = location.getLongitude();
+
+                    // 전체 POI 리스트 (POI Map이 Integer, POI로 되어 있다고 가정)
+                    Map<Integer, POI> poiMap = mainViewModel.getPoiMap().getValue();
+                    List<POI> allPoiList = new ArrayList<>();
+                    if (poiMap != null) {
+                        allPoiList.addAll(poiMap.values());
+                    }
+
+                    List<POI> nearbyPoiList = new ArrayList<>();
+                    for (POI poi : allPoiList) {
+                        double dist = distance(userLat, userLng, poi.getLatitude(), poi.getLongitude());
+                        if (dist <= 1.0) { // 1km 이내
+                            nearbyPoiList.add(poi);
+                        }
+                    }
+                    // ViewModel에 세팅 (filterPOIList() 통해 표시됨)
+                    viewModel.setPoiList(nearbyPoiList);
+                }
+            });
+
+        } else {
+            // 권한 요청 (처음 한 번만)
+            requestPermissions(
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    LOCATION_PERMISSION_REQUEST_CODE
+            );
+            // 또는: "위치 권한이 필요합니다" 안내
+        }
+    }
+
+    // Haversine 거리 계산 (반환: km)
+    private double distance(double lat1, double lng1, double lat2, double lng2) {
+        double earthRadius = 6371.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat/2) * Math.sin(dLat/2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLng/2) * Math.sin(dLng/2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        Log.d("Surrounding", "POI 거리(km): " + (earthRadius * c));
+        return earthRadius * c;
     }
 
     private void filterPOIList() {

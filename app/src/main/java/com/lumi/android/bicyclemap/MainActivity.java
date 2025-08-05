@@ -1,6 +1,7 @@
 package com.lumi.android.bicyclemap;
 
 import android.os.Bundle;
+import android.os.Debug;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -10,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.lumi.android.bicyclemap.api.dto.AuthResponse;
 import com.lumi.android.bicyclemap.repository.AuthRepository;
 import com.lumi.android.bicyclemap.repository.CourseRepository;
 import com.lumi.android.bicyclemap.ui.course.CourseFragment;
@@ -87,6 +89,20 @@ public class MainActivity extends AppCompatActivity {
 
             return false;
         });
+
+        // 테스트 로그인 (JWT 토큰 자동 저장)
+        //authRepository.login("email@example.com", "password", new AuthRepository.RepositoryCallback<AuthResponse>() {
+        //    @Override
+        //    public void onSuccess(AuthResponse response) {
+        //        // 로그인 성공, JWT 토큰이 자동으로 저장됨
+        //        // 이후 모든 API 호출에 자동으로 Authorization 헤더 추가
+        //    }
+        //
+        //    @Override
+        //    public void onError(String errorMessage) {
+        //        // 에러 처리
+        //    }
+        //});
 
         // 초기 화면: 지도탭
         bottomNavigationView.setSelectedItemId(R.id.navigation_maps);

@@ -16,7 +16,7 @@ public class POI implements Serializable {
     public String image;
     public String explanation;
 
-    // 선택적으로 getter 추가 가능
+    // 선택적으로 getter 추가
     public int getId() {
         return id;
     }
@@ -39,6 +39,17 @@ public class POI implements Serializable {
 
     public String getCategory() {
         return type;
+    }
+
+    // ★ 거리계산용 위도/경도 getter 추가
+    public double getLatitude() {
+        if (point != null) return point.getLat();
+        else return 0.0;
+    }
+
+    public double getLongitude() {
+        if (point != null) return point.getLng();
+        else return 0.0;
     }
 
     @Override

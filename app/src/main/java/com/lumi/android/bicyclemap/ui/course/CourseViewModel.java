@@ -7,13 +7,14 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.lumi.android.bicyclemap.api.dto.CourseListResponse;
+import com.lumi.android.bicyclemap.api.dto.CourseDto;
 import com.lumi.android.bicyclemap.repository.CourseRepository;
 
 import java.util.List;
 
 public class CourseViewModel extends ViewModel {
 
-    private final MutableLiveData<List<CourseListResponse.CourseDto>> courses = new MutableLiveData<>();
+    private final MutableLiveData<List<CourseDto>> courses = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
     
@@ -73,7 +74,7 @@ public class CourseViewModel extends ViewModel {
     }
 
     // Getter 메서드들
-    public LiveData<List<CourseListResponse.CourseDto>> getCourses() {
+    public LiveData<List<CourseDto>> getCourses() {
         return courses;
     }
 

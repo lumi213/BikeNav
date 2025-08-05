@@ -12,37 +12,52 @@ public class ReviewRequest {
     private String img_url;
     private String thumbnail_url;
 
-    // 코스 후기용 생성자
-    public ReviewRequest(int user_id, int course_id, int tracking_id, int rating, String content, String img_url, String thumbnail_url) {
-        this.user_id = user_id;
-        this.course_id = course_id;
-        this.tracking_id = tracking_id;
-        this.rating = rating;
-        this.content = content;
-        this.img_url = img_url;
-        this.thumbnail_url = thumbnail_url;
+
+    /* -------- 정적 팩토리 메서드 -------- */
+
+    /** 코스 후기 (명세 6.1) */
+    public static ReviewRequest forCourse(
+            int userId, int courseId, int trackingId,
+            int rating, String content,
+            String imgUrl, String thumbnailUrl) {
+
+        return new ReviewRequest(userId, rating, content, imgUrl, thumbnailUrl)
+                .setCourseId(courseId)
+                .setTrackingId(trackingId);
     }
 
-    // POI 후기용 생성자
-    public ReviewRequest(int user_id, int place_id, int rating, int diff, String content, String img_url, String thumbnail_url) {
-        this.user_id = user_id;
-        this.place_id = place_id;
-        this.rating = rating;
-        this.diff = diff;
-        this.content = content;
-        this.img_url = img_url;
-        this.thumbnail_url = thumbnail_url;
+    /** POI 후기 (명세 3.3) */
+    public static ReviewRequest forPoi(
+            int userId, int placeId, int rating, int diff,
+            String content, String imgUrl, String thumbnailUrl) {
+
+        return new ReviewRequest(userId, rating, content, imgUrl, thumbnailUrl)
+                .setPlaceId(placeId)
+                .setDiff(diff);
     }
 
-    // 편의시설 후기용 생성자
-    public ReviewRequest(int user_id, int fac_id, int rating, String content, String img_url, String thumbnail_url) {
-        this.user_id = user_id;
-        this.fac_id = fac_id;
-        this.rating = rating;
-        this.content = content;
-        this.img_url = img_url;
-        this.thumbnail_url = thumbnail_url;
+    /** 편의시설 후기 (명세 7.2) */
+    public static ReviewRequest forFacility(
+            int userId, int facId, int rating,
+            String content, String imgUrl, String thumbnailUrl) {
+
+        return new ReviewRequest(userId, rating, content, imgUrl, thumbnailUrl)
+                .setFacId(facId);
     }
+
+    /* -------- 내부 공통 생성자 -------- */
+
+    private ReviewRequest(int userId, int rating,
+                          String content, String imgUrl, String thumbnailUrl) {
+        this.user_id       = userId;
+        this.rating        = rating;
+        this.content       = content;
+        this.img_url       = imgUrl;
+        this.thumbnail_url = thumbnailUrl;
+    }
+
+
+
 
     // Getters
     public int getUserId() { return user_id; }
@@ -58,13 +73,15 @@ public class ReviewRequest {
 
     // Setters
     public void setUserId(int user_id) { this.user_id = user_id; }
-    public void setCourseId(int course_id) { this.course_id = course_id; }
-    public void setPlaceId(int place_id) { this.place_id = place_id; }
-    public void setFacId(int fac_id) { this.fac_id = fac_id; }
-    public void setTrackingId(int tracking_id) { this.tracking_id = tracking_id; }
     public void setRating(int rating) { this.rating = rating; }
-    public void setDiff(int diff) { this.diff = diff; }
     public void setContent(String content) { this.content = content; }
     public void setImgUrl(String img_url) { this.img_url = img_url; }
     public void setThumbnailUrl(String thumbnail_url) { this.thumbnail_url = thumbnail_url; }
+    /* -------- 체인 빌더 스타일 setter -------- */
+
+    private ReviewRequest setCourseId(int id)   { this.course_id = id; return this; }
+    private ReviewRequest setTrackingId(int id) { this.tracking_id = id; return this; }
+    private ReviewRequest setPlaceId(int id)    { this.place_id = id; return this; }
+    private ReviewRequest setFacId(int id)      { this.fac_id = id; return this; }
+    private ReviewRequest setDiff(int diff)     { this.diff = diff; return this; }
 } 

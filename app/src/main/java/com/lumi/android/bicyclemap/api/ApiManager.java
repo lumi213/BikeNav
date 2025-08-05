@@ -235,7 +235,7 @@ public class ApiManager {
 
     // 6. 후기 API
     public void addCourseReview(int userId, int courseId, int trackingId, int rating, String content, String imgUrl, String thumbnailUrl, ApiCallback<ApiResponse> callback) {
-        ReviewRequest request = new ReviewRequest(userId, courseId, trackingId, rating, content, imgUrl, thumbnailUrl);
+        ReviewRequest request = ReviewRequest.forCourse(userId, courseId, trackingId, rating, content, imgUrl, thumbnailUrl);
         apiService.addCourseReview(request).enqueue(new Callback<ApiResponse>() {
             @Override
             public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
@@ -254,7 +254,7 @@ public class ApiManager {
     }
 
     public void addPoiReview(int courseId, int placeId, int userId, int rating, int diff, String content, String imgUrl, String thumbnailUrl, ApiCallback<ApiResponse> callback) {
-        ReviewRequest request = new ReviewRequest(userId, placeId, rating, diff, content, imgUrl, thumbnailUrl);
+        ReviewRequest request = ReviewRequest.forPoi(userId, placeId, rating, diff, content, imgUrl, thumbnailUrl);
         apiService.addPoiReview(courseId, placeId, request).enqueue(new Callback<ApiResponse>() {
             @Override
             public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
