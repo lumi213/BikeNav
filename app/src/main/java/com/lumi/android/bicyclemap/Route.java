@@ -7,9 +7,9 @@ public class Route implements Serializable {
     public int id;
     public String title;
     public String image;
-    public float dist_km;
+    public double dist_km;
     public int time;
-    public String diff;               // 난이도 (상/중/하)
+    public int diff;               // 난이도 (상/중/하)
     public List<Point> path;
     public String type;               // 코스유형 (자전거/산책)
     public List<String> category;     // 추천유형 (예: 계절/경험 등 카테고리)
@@ -26,7 +26,10 @@ public class Route implements Serializable {
     public List<String> tourist_spots;  // API의 tourist_spots
     public List<String> nearby_businesses;  // API의 nearby_businesses
 
+    public void setPoi(List<Integer> Poi) { poi = Poi; }
+
     // 선택적으로 getter를 정의
+    public int getId() { return id; }
     public String getName() {
         return title;
     }
@@ -35,7 +38,7 @@ public class Route implements Serializable {
         return image;
     }
 
-    public float getDistance() {
+    public double getDistance() {
         return dist_km;
     }
 

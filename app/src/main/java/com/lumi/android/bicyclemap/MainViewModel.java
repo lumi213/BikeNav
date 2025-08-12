@@ -1,6 +1,7 @@
 package com.lumi.android.bicyclemap;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -67,6 +68,7 @@ public class MainViewModel extends ViewModel {
 
     public void setSelectedRoute(Route route) {
         selectedRoute.setValue(route);
+        Log.d("Surrounding","set route: " + route);
     }
 
     public LiveData<Boolean> getIsLoading() {
@@ -107,9 +109,18 @@ public class MainViewModel extends ViewModel {
         }
     }
 
-    // (선택) 상태 초기화 등 유틸 메서드
+    // 지도 정리 이벤트 (프래그먼트가 observe해서 폴리라인/마커 지움)
+    private final MutableLiveData<Long> clearMapEvent = new MutableLiveData<>();
+    public LiveData<Long> getClearMapEvent() { return clearMapEvent; }
+
+    private void emitClearMapEvent() {
+        clearMapEvent.setValue(System.nanoTime());
+    }
+
+    // === 상태 초기화 ===
     public void resetMapState() {
         mapState.setValue(MapState.GENERAL);
         selectedRoute.setValue(null);
+        emitClearMapEvent();
     }
 }

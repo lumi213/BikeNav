@@ -1,5 +1,7 @@
 package com.lumi.android.bicyclemap;
 
+import android.net.Uri;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,103 +14,98 @@ import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 
 public class POIAdapter extends ListAdapter<POI, POIAdapter.POIViewHolder> {
 
-    public POIAdapter() {
-        super(DIFF_CALLBACK);
-    }
+    public POIAdapter() { super(DIFF_CALLBACK); }
 
+    /* ───────────────────────── ViewHolder 생성 ───────────────────────── */
     @NonNull
     @Override
     public POIViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
+        View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_poi, parent, false);
-        return new POIViewHolder(view);
+        return new POIViewHolder(v);
     }
 
+    /* ───────────────────────── 데이터 바인딩 ───────────────────────── */
     @Override
-    public void onBindViewHolder(@NonNull POIViewHolder holder, int position) {
-        POI poi = getItem(position);
+    public void onBindViewHolder(@NonNull POIViewHolder h, int pos) {
+        POI p = getItem(pos);
 
-        // 상호명
-        holder.name.setText(poi.name);
-
-        // 별점(rate) - 소수점 한 자리 표시
-        holder.rating.setText(poi.rate > 0 ? String.format("%.1f", poi.rate) : "-");
-        // 별점 아이콘은 XML에 이미지로 있음
-
-        // 카테고리(음식점/카페/화장실 등)
-        holder.category.setText(categoryToKor(poi.type));
-
-        // 영업시간(hour)
-        holder.time.setText(poi.hour != null ? poi.hour : "");
-
-        // 옵션(메뉴, 전화, 기타)
-        holder.option.setText(makeOptionString(poi));
+        // 텍스트
+        h.name.setText(p.name);
+        h.rating.setText(p.rate > 0 ? String.format("%.1f", p.rate) : "-");
+        h.category.setText(categoryToKor(p.type));
+        h.time.setText(p.hour != null ? p.hour : "");
+        h.option.setText(makeOptionString(p));
 
         // 이미지
-        if (poi.image != null && !poi.image.isEmpty()) {
-            int resId = holder.image.getContext().getResources()
-                    .getIdentifier(poi.image.replace(".jpg", "").replace(".png", ""),
-                            "drawable", holder.image.getContext().getPackageName());
-            if (resId != 0) {
-                Glide.with(holder.image.getContext())
-                        .load(resId)
-                        .placeholder(R.drawable.loading)
-                        .into(holder.image);
-            } else {
-                holder.image.setImageResource(R.drawable.loading);
-            }
+        final int PLACEHOLDER = R.drawable.loading;       // 로딩 중
+        final int ERROR_IMG   = R.drawable.sample_image;  // 로딩 실패
+        final int NO_URL_IMG  = R.drawable.noimg;         // URL 없음
+
+        if (p.image != null && !p.image.trim().isEmpty()) {
+            String src = p.image.trim();
+            Object glideSrc = src.startsWith("data:image")
+                    ? Uri.parse(src)           // data URI
+                    : src;                     // http / https
+
+            Glide.with(h.image.getContext())
+                    .load(glideSrc)
+                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .placeholder(PLACEHOLDER)
+                    .error(ERROR_IMG)
+                    .centerCrop()
+                    .into(h.image);
         } else {
-            holder.image.setImageResource(R.drawable.noimg);
+            h.image.setImageResource(NO_URL_IMG);
         }
     }
 
+    /* ───────────────────────── DIFF_CALLBACK ───────────────────────── */
+    public static final DiffUtil.ItemCallback<POI> DIFF_CALLBACK =
+            new DiffUtil.ItemCallback<POI>() {
+                @Override
+                public boolean areItemsTheSame(@NonNull POI o,@NonNull POI n){
+                    return o.id == n.id;
+                }
+                @Override
+                public boolean areContentsTheSame(@NonNull POI o,@NonNull POI n){
+                    return o.equals(n);
+                }
+            };
+
+    /* ───────────────────────── ViewHolder ───────────────────────── */
     static class POIViewHolder extends RecyclerView.ViewHolder {
-        ImageView image;
-        TextView name, rating, category, time, option;
-
-        public POIViewHolder(@NonNull View itemView) {
-            super(itemView);
-            image = itemView.findViewById(R.id.poiImage);
-            name = itemView.findViewById(R.id.poiName);
-            rating = itemView.findViewById(R.id.poiRating);
-            category = itemView.findViewById(R.id.poiCategory);
-            time = itemView.findViewById(R.id.poiTime);
-            option = itemView.findViewById(R.id.poiOption);
+        ImageView image;  TextView name, rating, category, time, option;
+        POIViewHolder(@NonNull View v) {
+            super(v);
+            image     = v.findViewById(R.id.poiImage);
+            name      = v.findViewById(R.id.poiName);
+            rating    = v.findViewById(R.id.poiRating);
+            category  = v.findViewById(R.id.poiCategory);
+            time      = v.findViewById(R.id.poiTime);
+            option    = v.findViewById(R.id.poiOption);
         }
     }
 
-    public static final DiffUtil.ItemCallback<POI> DIFF_CALLBACK = new DiffUtil.ItemCallback<POI>() {
-        @Override
-        public boolean areItemsTheSame(@NonNull POI oldItem, @NonNull POI newItem) {
-            return oldItem.id == newItem.id;
-        }
-        @Override
-        public boolean areContentsTheSame(@NonNull POI oldItem, @NonNull POI newItem) {
-            return oldItem.equals(newItem);
-        }
-    };
-
-    // 유틸: 타입 영문→한글 변환 (예시)
-    private static String categoryToKor(String type) {
-        if ("Restaurant".equalsIgnoreCase(type) || "음식점".equals(type)) return "음식점";
-        if ("Cafe".equalsIgnoreCase(type) || "카페".equals(type)) return "카페";
-        if ("Toilet".equalsIgnoreCase(type) || "화장실".equals(type)) return "화장실";
-        return type != null ? type : "";
+    /* ───────────────────────── 유틸 함수 ───────────────────────── */
+    private static String categoryToKor(String t){
+        if("Restaurant".equalsIgnoreCase(t)||"음식점".equals(t)) return "음식점";
+        if("Cafe".equalsIgnoreCase(t)      ||"카페".equals(t))   return "카페";
+        if("Toilet".equalsIgnoreCase(t)    ||"화장실".equals(t)) return "화장실";
+        return t!=null ? t : "";
     }
 
-    // 유틸: 옵션 문자열 생성 (전화, 메뉴 등 POI 필드 조합, 필요에 맞게 추가)
-    private static String makeOptionString(POI poi) {
+    private static String makeOptionString(POI p){
         StringBuilder sb = new StringBuilder();
-        if (poi.menu != null && !poi.menu.isEmpty()) {
-            sb.append(poi.menu);
-        }
-        if (poi.tel != null && !poi.tel.isEmpty()) {
+        if (p.menu != null && !p.menu.isEmpty()) sb.append(p.menu);
+        if (p.tel  != null && !p.tel.isEmpty()) {
             if (sb.length() > 0) sb.append(" · ");
-            sb.append("☎ ").append(poi.tel);
+            sb.append("☎ ").append(p.tel);
         }
-        return sb.length() > 0 ? sb.toString() : ""; // 필요시 기본값
+        return sb.toString();
     }
 }

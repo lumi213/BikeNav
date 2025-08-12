@@ -16,4 +16,9 @@
         android:icon="@drawable/ic_course_black_24dp"
         android:title="@string/title_course" />
 
+    <item
+        android:id="@+id/navigation_setting"
+        android:icon="@drawable/ic_setting_black_24dp"
+        android:title="@string/title_setting" />
+
 </menu>

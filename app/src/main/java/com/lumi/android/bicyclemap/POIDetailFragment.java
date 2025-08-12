@@ -13,60 +13,80 @@ import androidx.annotation.Nullable;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.lumi.android.bicyclemap.util.ImageLoader;
 
 public class POIDetailFragment extends BottomSheetDialogFragment {
 
     private static final String ARG_POI = "arg_poi";
     private POI poi;
 
-    public static POIDetailFragment newInstance(POI poi) {
-        POIDetailFragment fragment = new POIDetailFragment();
+    /* ───────────────────────── 인스턴스 팩토리 ───────────────────────── */
+    public static POIDetailFragment newInstance(@NonNull POI poi) {
+        POIDetailFragment f = new POIDetailFragment();
         Bundle args = new Bundle();
         args.putSerializable(ARG_POI, poi);
-        fragment.setArguments(args);
-        return fragment;
+        f.setArguments(args);
+        return f;
     }
 
+    /* ───────────────────────── onCreateView ───────────────────────── */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.poi_detail, container, false);
+
+        View v = inflater.inflate(R.layout.poi_detail, container, false);
 
         if (getArguments() != null) {
             poi = (POI) getArguments().getSerializable(ARG_POI);
         }
 
-        TextView name = view.findViewById(R.id.poi_name);
-        TextView desc = view.findViewById(R.id.poi_description);
-        ImageView image = view.findViewById(R.id.poi_image);
+        TextView name  = v.findViewById(R.id.poi_name);
+        TextView desc  = v.findViewById(R.id.poi_description);
+        ImageView img  = v.findViewById(R.id.poi_image);
 
         if (poi != null) {
             name.setText(poi.name);
             desc.setText(poi.explanation);
-            int resId = getResources().getIdentifier(
-                    poi.image.replace(".jpg", "").replace(".png", ""),
-                    "drawable",
-                    requireContext().getPackageName()
-            );
-            image.setImageResource(resId);
+
+            /* ─── 이미지 로딩 ─── */
+            final int PLACEHOLDER = R.drawable.loading;       // 로딩 중
+            final int ERROR_IMG   = R.drawable.sample_image;  // 로딩 실패
+            final int NO_URL_IMG  = R.drawable.noimg;         // URL 없음
+
+            if (poi.image != null && !poi.image.trim().isEmpty()) {
+                // http/https URL 또는 data:image;base64 형식 모두 처리
+                ImageLoader.loadFlexible(
+                        requireContext(),
+                        poi.image.trim(),
+                        img,
+                        PLACEHOLDER      // placeholder & error = loading
+                );
+
+                /* Glide error 처리: ImageLoader.loadFlexible() 안에서
+                   error(placeholderResId) 로 지정되어 있으므로 Glide 실패 시
+                   loading.png 가 남습니다. 필요하면 아래처럼 콜백으로 errorImage 변경 가능
+                 */
+                // Glide.with(this).clear(img); // 예: 커스텀 에러 이미지를 쓰려면
+            } else {
+                img.setImageResource(NO_URL_IMG);
+            }
         }
 
-        return view;
+        return v;
     }
 
+    /* ───────────────────────── BottomSheet 높이 조정 ───────────────────────── */
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         BottomSheetDialog dialog = (BottomSheetDialog) super.onCreateDialog(savedInstanceState);
-        dialog.setOnShowListener(dialogInterface -> {
-            BottomSheetDialog d = (BottomSheetDialog) dialogInterface;
-            View bottomSheet = d.findViewById(com.google.android.material.R.id.design_bottom_sheet);
-            if (bottomSheet != null) {
-                ViewGroup.LayoutParams layoutParams = bottomSheet.getLayoutParams();
-                layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-                bottomSheet.setLayoutParams(layoutParams);
-                bottomSheet.setFitsSystemWindows(false);
+        dialog.setOnShowListener(di -> {
+            BottomSheetDialog d = (BottomSheetDialog) di;
+            View sheet = d.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (sheet != null) {
+                sheet.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                sheet.setFitsSystemWindows(false);
             }
         });
         return dialog;

@@ -1,5 +1,6 @@
 package com.lumi.android.bicyclemap.ui.course;
 
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,102 +13,115 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.lumi.android.bicyclemap.MainViewModel;
 import com.lumi.android.bicyclemap.R;
 import com.lumi.android.bicyclemap.Route;
-
-import java.util.List;
 
 public class CourseAdapter extends ListAdapter<Route, CourseAdapter.CourseViewHolder> {
 
     private final MainViewModel viewModel;
     private OnCourseClickListener listener;
 
+    /* ───────────────────────── Click Listener ───────────────────────── */
     public interface OnCourseClickListener {
         void onCourseClick(Route route);
     }
-
-    public void setOnCourseClickListener(OnCourseClickListener listener) {
-        this.listener = listener;
-    }
+    public void setOnCourseClickListener(OnCourseClickListener l) { this.listener = l; }
 
     public CourseAdapter(MainViewModel viewModel) {
         super(DIFF_CALLBACK);
         this.viewModel = viewModel;
     }
 
+    /* ───────────────────────── ViewHolder 생성 ───────────────────────── */
     @NonNull
     @Override
     public CourseViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
+        View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_course, parent, false);
-        return new CourseViewHolder(view);
+        return new CourseViewHolder(v);
     }
 
+    /* ───────────────────────── 데이터 바인딩 ───────────────────────── */
     @Override
-    public void onBindViewHolder(@NonNull CourseViewHolder holder, int position) {
-        Route route = getItem(position);
+    public void onBindViewHolder(@NonNull CourseViewHolder h, int pos) {
+        Route r = getItem(pos);
 
-        holder.title.setText(route.title);
-        holder.desc.setText("경로 " + route.dist_km + "km · " + route.time + "분 · " + (route.tourist_point != null && !route.tourist_point.isEmpty() ? route.tourist_point.get(0) : ""));
-        holder.summary.setText(route.explanation != null ? route.explanation : "");
+        // 텍스트
+        h.title.setText(r.title);
+        h.desc.setText("경로 " + r.dist_km + "km · " + r.time + "분 · "
+                + (r.tourist_point != null && !r.tourist_point.isEmpty()
+                ? r.tourist_point.get(0) : ""));
+        h.summary.setText(r.explanation != null ? r.explanation : "");
 
-        // 해시태그 동적 추가
-        holder.tags.removeAllViews();
-        if (route.category != null) {
-            for (String tag : route.category) {
-                TextView tagView = new TextView(holder.tags.getContext());
-                tagView.setText("#" + tag);
-                tagView.setTextSize(12);
-                tagView.setTextColor(0xFF555555);
-                tagView.setPadding(0, 0, 16, 0);
-                holder.tags.addView(tagView);
+        // 해시태그
+        h.tags.removeAllViews();
+        if (r.category != null) {
+            for (String tag : r.category) {
+                TextView tv = new TextView(h.tags.getContext());
+                tv.setText("#" + tag);
+                tv.setTextSize(12);
+                tv.setTextColor(0xFF555555);
+                tv.setPadding(0,0,16,0);
+                h.tags.addView(tv);
             }
         }
 
-        int imageResId = holder.image.getContext().getResources()
-                .getIdentifier(route.image.replace(".jpg", "").replace(".png", ""),
-                        "drawable", holder.image.getContext().getPackageName());
-        holder.image.setImageResource(imageResId);
+        /* ───── 이미지 로딩 변경 ───── */
+        final int PLACEHOLDER = R.drawable.loading;       // 로딩 중
+        final int ERROR_IMG   = R.drawable.sample_image;  // 로딩 실패
+        final int NO_URL_IMG  = R.drawable.noimg;         // URL 없음
 
-        holder.itemView.setOnClickListener(v -> {
-            viewModel.setSelectedRoute(route);
-            if (listener != null) listener.onCourseClick(route);
+        if (r.image != null && !r.image.trim().isEmpty()) {
+            String src = r.image.trim();
+            Object glideSrc = src.startsWith("data:image") ? Uri.parse(src) : src;
+
+            Glide.with(h.image.getContext())
+                    .load(glideSrc)
+                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .placeholder(PLACEHOLDER)
+                    .error(ERROR_IMG)
+                    .centerCrop()
+                    .into(h.image);
+        } else {
+            h.image.setImageResource(NO_URL_IMG);
+        }
+
+        // 클릭
+        h.itemView.setOnClickListener(v -> {
+            viewModel.setSelectedRoute(r);
+            if (listener != null) listener.onCourseClick(r);
         });
     }
 
-    public static class CourseViewHolder extends RecyclerView.ViewHolder {
+    /* ───────────────────────── ViewHolder ───────────────────────── */
+    static class CourseViewHolder extends RecyclerView.ViewHolder {
         ImageView image;
         TextView title, desc, summary;
         LinearLayout tags;
-
-        public CourseViewHolder(@NonNull View itemView) {
-            super(itemView);
-            image = itemView.findViewById(R.id.course_image);
-            title = itemView.findViewById(R.id.course_title);
-            desc = itemView.findViewById(R.id.course_desc);
-            summary = itemView.findViewById(R.id.course_summary);
-            tags = itemView.findViewById(R.id.course_tags);
+        CourseViewHolder(@NonNull View v) {
+            super(v);
+            image   = v.findViewById(R.id.course_image);
+            title   = v.findViewById(R.id.course_title);
+            desc    = v.findViewById(R.id.course_desc);
+            summary = v.findViewById(R.id.course_summary);
+            tags    = v.findViewById(R.id.course_tags);
         }
     }
 
-    private static final DiffUtil.ItemCallback<Route> DIFF_CALLBACK = new DiffUtil.ItemCallback<Route>() {
-        @Override
-        public boolean areItemsTheSame(@NonNull Route oldItem, @NonNull Route newItem) {
-            return oldItem.id == newItem.id;
-        }
-
-        @Override
-        public boolean areContentsTheSame(@NonNull Route oldItem, @NonNull Route newItem) {
-            // 기존에 문제였던 부분: null 체크 없이 비교
-            // return oldItem.name.equals(newItem.name) && oldItem.category.equals(newItem.category);
-
-            // ✅ null-safe 비교로 변경
-            boolean sameName = oldItem.title != null && oldItem.title.equals(newItem.title);
-            boolean sameCategory = oldItem.category != null && newItem.category != null
-                    && oldItem.category.equals(newItem.category);
-
-            return sameName && sameCategory;
-        }
-    };
+    /* ───────────────────────── DiffUtil ───────────────────────── */
+    private static final DiffUtil.ItemCallback<Route> DIFF_CALLBACK =
+            new DiffUtil.ItemCallback<Route>() {
+                public boolean areItemsTheSame(@NonNull Route o,@NonNull Route n){
+                    return o.id == n.id;
+                }
+                public boolean areContentsTheSame(@NonNull Route o,@NonNull Route n){
+                    boolean sameTitle = o.title != null && o.title.equals(n.title);
+                    boolean sameCat   = o.category != null && n.category != null
+                            && o.category.equals(n.category);
+                    return sameTitle && sameCat;
+                }
+            };
 }

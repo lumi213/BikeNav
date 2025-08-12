@@ -20,7 +20,7 @@
             android:layout_width="72dp"
             android:layout_height="72dp"
             android:scaleType="centerCrop"
-            android:src="@drawable/ediya"
+            android:src="@drawable/sample_image"
             android:background="@drawable/loading"
             android:layout_marginEnd="14dp"
             android:contentDescription="가게 이미지" />

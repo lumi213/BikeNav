@@ -3,4 +3,6 @@
     <string name="title_surrounding">주변</string>
     <string name="title_maps">지도</string>
     <string name="title_course">코스</string>
+    <string name="title_course_detail">코스 디테일</string>
+    <string name="title_setting">설정</string>
 </resources>

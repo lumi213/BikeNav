@@ -12,8 +12,12 @@ import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class RouteAdapter extends ListAdapter<Route, RouteAdapter.ViewHolder> {
+import com.lumi.android.bicyclemap.util.ImageLoader;
 
+public class RouteAdapter extends ListAdapter<Route, RouteAdapter.ViewHolder> {
+    public interface OnRouteClickListener { void onRouteClick(Route route, int position); }
+    private OnRouteClickListener listener;
+    public void setOnRouteClickListener(OnRouteClickListener l) { this.listener = l; }
     private final MainViewModel viewModel;
     private RecyclerView recyclerView;
 
@@ -40,10 +44,21 @@ public class RouteAdapter extends ListAdapter<Route, RouteAdapter.ViewHolder> {
         holder.title.setText(route.title);
         holder.info.setText("약 " + route.dist_km + "km · " + route.time + "분");
 
-        int imageResId = holder.image.getContext().getResources()
-                .getIdentifier(route.image.replace(".jpg", "").replace(".png", ""),
-                        "drawable", holder.image.getContext().getPackageName());
-        holder.image.setImageResource(imageResId);
+        boolean isBike = "bike".equalsIgnoreCase(route.type == null ? "" : route.type.trim());
+        // 카테고리별 기본 이미지 결정
+        int fallbackResId = isBike          // ← Route 모델에 boolean isBike 필드(또는 비슷한 구분값)가 있다고 가정
+                ? R.drawable.bike_route
+                : R.drawable.walk_route;
+
+        // URL → ImageView (비어 있거나 실패 시 fallback 사용)
+        String imgUrl = route.image;              // 서버에서 받은 절대 URL (null/"" 일 수 있음)
+
+        if (imgUrl == null || imgUrl.trim().isEmpty()) {
+            // URL이 없으면 즉시 기본 이미지 표시
+            holder.image.setImageResource(fallbackResId);
+        } else {
+            ImageLoader.load(holder.image.getContext(), imgUrl, holder.image, fallbackResId);
+        }
 
         holder.itemView.setOnClickListener(v -> {
             viewModel.setSelectedRoute(route);
@@ -67,6 +82,7 @@ public class RouteAdapter extends ListAdapter<Route, RouteAdapter.ViewHolder> {
                     }
                 }
             }
+            if (listener != null) listener.onRouteClick(route, position);
         });
     }
 

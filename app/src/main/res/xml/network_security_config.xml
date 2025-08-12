@@ -3,6 +3,7 @@
     <base-config cleartextTrafficPermitted="false" />
     <domain-config cleartextTrafficPermitted="true">
         <!-- 로컬 테스트용 도메인/IP -->
+        <domain includeSubdomains="true">lumi.pe.kr</domain>
         <domain includeSubdomains="true">10.0.2.2</domain>
     </domain-config>
 </network-security-config>

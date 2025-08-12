@@ -2,6 +2,8 @@ package com.lumi.android.bicyclemap.api;
 
 import android.content.Context;
 
+import androidx.annotation.Nullable;
+
 import com.lumi.android.bicyclemap.api.dto.ApiResponse;
 import com.lumi.android.bicyclemap.api.dto.AuthRequest;
 import com.lumi.android.bicyclemap.api.dto.AuthResponse;
@@ -277,4 +279,22 @@ public class ApiManager {
         void onSuccess(T response);
         void onError(String errorMessage);
     }
+
+    private ApiService getApiService() {
+        return apiService;
+    }
+    // 코스 주변 POI 목록 조회
+    public void fetchCoursePois(int courseId, @Nullable String category,
+                                retrofit2.Callback<PoiListResponse> callback) {
+        ApiService s = getApiService(); // 기존에 있던 getter 사용
+        s.getPois(courseId, category).enqueue(callback);
+    }
+
+    // POI 상세 조회
+    public void fetchPoiDetail(int courseId, int placeId,
+                               retrofit2.Callback<ApiResponse<PoiDto>> callback) {
+        ApiService s = getApiService();
+        s.getPoiDetail(courseId, placeId).enqueue(callback);
+    }
+
 } 

@@ -38,7 +38,7 @@ public class SurroundingFragment extends Fragment {
     private POIAdapter adapter;
 
     private enum FilterCategory {
-        ALL, RESTAURANT, CAFE, TOILET
+        ALL, BIZ, UTIL, TOURIST
     }
 
     private FilterCategory currentFilter = FilterCategory.ALL;
@@ -99,6 +99,14 @@ public class SurroundingFragment extends Fragment {
             }
         });
 
+        // 중요: 옵저버 등록만으로는 "현재 값"이 null이어도 emit이 안 될 수 있으므로 직접 한 번 체크
+        if (mainViewModel.getSelectedRoute().getValue() == null) {
+            Log.d("Surrounding","initial selectedRoute is NULL -> getCurrentLocationAndShowNearbyPOI()");
+            getCurrentLocationAndShowNearbyPOI();
+        } else {
+            Log.d("Surrounding","initial selectedRoute is NOT null");
+        }
+
         viewModel.getPoiList().observe(getViewLifecycleOwner(), poiList -> {
             if (poiList != null) {
                 latestPoiList = poiList;
@@ -110,12 +118,12 @@ public class SurroundingFragment extends Fragment {
         MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.category_toggle_group);
         toggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
-                if (checkedId == R.id.btn_filter_restaurant) {
-                    currentFilter = FilterCategory.RESTAURANT;
-                } else if (checkedId == R.id.btn_filter_cafe) {
-                    currentFilter = FilterCategory.CAFE;
-                } else if (checkedId == R.id.btn_filter_toilet) {
-                    currentFilter = FilterCategory.TOILET;
+                if (checkedId == R.id.btn_filter_biz) {
+                    currentFilter = FilterCategory.BIZ;
+                } else if (checkedId == R.id.btn_filter_util) {
+                    currentFilter = FilterCategory.UTIL;
+                } else if (checkedId == R.id.btn_filter_tourist) {
+                    currentFilter = FilterCategory.TOURIST;
                 } else {
                     currentFilter = FilterCategory.ALL;
                 }
@@ -184,19 +192,19 @@ public class SurroundingFragment extends Fragment {
     private void filterPOIList() {
         List<POI> filteredList = new ArrayList<>();
         switch (currentFilter) {
-            case RESTAURANT:
+            case BIZ:
                 for (POI poi : latestPoiList)
-                    if ("Restaurant".equalsIgnoreCase(poi.getCategory()) || "음식점".equals(poi.getCategory()))
+                    if ("biz".equalsIgnoreCase(poi.getCategory()) || "상권".equals(poi.getCategory()))
                         filteredList.add(poi);
                 break;
-            case CAFE:
+            case UTIL:
                 for (POI poi : latestPoiList)
-                    if ("Cafe".equalsIgnoreCase(poi.getCategory()) || "카페".equals(poi.getCategory()))
+                    if ("util".equalsIgnoreCase(poi.getCategory()) || "편의 시설".equals(poi.getCategory()))
                         filteredList.add(poi);
                 break;
-            case TOILET:
+            case TOURIST:
                 for (POI poi : latestPoiList)
-                    if ("Toilet".equalsIgnoreCase(poi.getCategory()) || "화장실".equals(poi.getCategory()))
+                    if ("tourist".equalsIgnoreCase(poi.getCategory()) || "관광지".equals(poi.getCategory()))
                         filteredList.add(poi);
                 break;
             case ALL:
