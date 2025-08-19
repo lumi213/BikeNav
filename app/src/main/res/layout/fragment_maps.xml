@@ -63,7 +63,7 @@
             android:paddingBottom="6dp"
             android:layout_marginStart="12dp"
             android:text="남은 거리 6.5Km"
-            android:textColor="@android:color/white"
+            android:textColor="@android:color/black"
             android:textStyle="bold"
             android:textSize="15sp" />
     </LinearLayout>

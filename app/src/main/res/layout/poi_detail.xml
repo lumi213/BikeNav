@@ -2,31 +2,126 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:padding="16dp">
 
-    <ImageView
-        android:id="@+id/poi_image"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="180dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/sample_image" />
+        android:layout_height="160dp"
+        android:orientation="horizontal"
+        android:padding="10dp">
+
+        <ImageView
+            android:id="@+id/poi_image"
+            android:layout_width="130dp"
+            android:layout_height="140dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/sample_image" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingLeft="10dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:layout_width="match_parent"
+                android:layout_height="56dp">
+
+                <TextView
+                    android:id="@+id/poi_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="이름"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:ellipsize="end"
+                    android:maxLines="1" />
+
+                <TextView
+                    android:id="@+id/poi_description"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="설명"
+                    android:textSize="14sp"
+                    android:layout_marginLeft="4dp"
+                    android:ellipsize="end"
+                    android:maxLines="1" />
+
+                <!-- Flow가 둘을 한 줄에 배치하다가 공간 없으면 자동 줄바꿈 -->
+                <androidx.constraintlayout.helper.widget.Flow
+                    android:id="@+id/name_desc_flow"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    app:constraint_referenced_ids="poi_name,poi_description"
+                    app:flow_wrapMode="aligned"
+                    app:flow_horizontalAlign="start"
+                    app:flow_horizontalGap="8dp"
+                    app:flow_verticalGap="2dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/poi_rate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="4.2"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/poi_star"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="****"
+                    android:textSize="14sp"
+                    android:layout_marginLeft="4dp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/poi_addr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="주소"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/poi_hour"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="영업시간"
+                android:textSize="14sp"/>
+
+            <TextView
+                android:id="@+id/poi_tel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="전화번호"
+                android:textSize="14sp"/>
+        </LinearLayout>
+    </LinearLayout>
 
     <TextView
-        android:id="@+id/poi_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="양지막국수"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginTop="12dp" />
+        android:text="메뉴"
+        android:textSize="16sp"
+        android:layout_marginLeft="14dp" />
 
-    <TextView
-        android:id="@+id/poi_description"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="국수 전문점"
-        android:textSize="14sp"
-        android:layout_marginTop="4dp" />
+        android:layout_height="200dp"
+        android:orientation="horizontal"
+        android:padding="14dp">
 
+    </LinearLayout>
 </LinearLayout>

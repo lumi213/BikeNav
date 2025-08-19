@@ -762,6 +762,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         Map<Integer, POI> poiMap = viewModel.getPoiMap().getValue();
         if (poiMap == null) return;
 
+        // poi marker 추가하는 부분
+        if(true) return;
         for (int poiId : route.getPoi()) {
             POI poi = poiMap.get(poiId);
             if (poi != null) {

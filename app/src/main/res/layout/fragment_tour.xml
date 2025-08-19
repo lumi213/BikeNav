@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+
+    <!-- 🔍 검색창 -->
+    <EditText
+        android:id="@+id/tour_search_input"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:hint="어떤 코스를 찾으세요?"
+        android:drawableStart="@android:drawable/ic_menu_search"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:inputType="text"
+        android:textSize="14sp"
+        android:drawablePadding="8dp" />
+
+    <!-- 상단 안내 문구 -->
+    <TextView
+        android:id="@+id/tourTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="평창에서 다양한 경험을 해보세요!"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#222222"
+        android:paddingTop="28dp"
+        android:paddingBottom="12dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"/>
+
+    <!-- 상단 카테고리 필터 버튼 그룹 -->
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/tour_category_toggle_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        app:singleSelection="true"
+        android:layout_marginBottom="18dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_tour_filter_biz"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="상권"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"
+            app:cornerRadius="16dp"
+            android:layout_marginEnd="8dp"
+            android:textColor="#444444"
+            android:backgroundTint="#F6F6F6"
+            />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_tour_filter_util"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="편의 시설"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"
+            app:cornerRadius="16dp"
+            android:layout_marginEnd="8dp"
+            android:textColor="#444444"
+            android:backgroundTint="#F6F6F6"
+            />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_tour_filter_tourist"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="관광지"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"
+            app:cornerRadius="16dp"
+            android:textColor="#444444"
+            android:backgroundTint="#F6F6F6"
+            />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <!-- 주변 POI 리스트 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/tour_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:scrollbars="vertical" />
+
+</LinearLayout>

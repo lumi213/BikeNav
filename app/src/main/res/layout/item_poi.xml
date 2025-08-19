@@ -10,20 +10,20 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="160dp"
         android:orientation="horizontal"
         android:padding="14dp">
 
         <!-- 썸네일 이미지 -->
         <ImageView
             android:id="@+id/poiImage"
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/sample_image"
-            android:background="@drawable/loading"
+            android:layout_width="120dp"
+            android:layout_height="match_parent"
             android:layout_marginEnd="14dp"
-            android:contentDescription="가게 이미지" />
+            android:background="@drawable/loading"
+            android:contentDescription="가게 이미지"
+            android:scaleType="centerCrop"
+            android:src="@drawable/sample_image" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -36,19 +36,19 @@
                 android:id="@+id/poiName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="콩나물해장국"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:maxLines="1"
                 android:ellipsize="end"
-                android:paddingBottom="2dp"/>
+                android:maxLines="1"
+                android:paddingBottom="2dp"
+                android:text="콩나물해장국"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <!-- 별점 + 카테고리 -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
                 android:gravity="center_vertical"
+                android:orientation="horizontal"
                 android:paddingTop="1dp"
                 android:paddingBottom="1dp">
 
@@ -56,47 +56,59 @@
                     android:id="@+id/poiRating"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:paddingEnd="2dp"
                     android:text="4.7"
                     android:textColor="#FFC107"
-                    android:textStyle="bold"
-                    android:paddingEnd="2dp"
-                    android:textSize="14sp"/>
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
                 <ImageView
+                    android:id="@+id/poiRatingImg"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:src="@drawable/star"
                     android:layout_marginEnd="4dp"
-                    android:contentDescription="별점"/>
-                <TextView
-                    android:id="@+id/poiCategory"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="음식점"
-                    android:textColor="#888888"
-                    android:textSize="13sp"
-                    android:paddingStart="2dp"/>
+                    android:contentDescription="별점"
+                    android:src="@drawable/star" />
+
             </LinearLayout>
 
             <!-- 영업시간 -->
             <TextView
-                android:id="@+id/poiTime"
+                android:id="@+id/poiCategory"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="월~토 오전 6:30 ~ 오후 3:00"
+                android:paddingStart="2dp"
+                android:text="음식점"
                 android:textColor="#888888"
-                android:textSize="13sp"
-                android:paddingTop="1dp"
-                android:paddingBottom="1dp"/>
+                android:textSize="13sp" />
 
-            <!-- 옵션: 매장 내 식사, 테이크아웃 등 -->
+            <TextView
+                android:id="@+id/poiTime"
+                android:layout_width="wrap_content"
+                android:layout_height="24dp"
+                android:paddingTop="1dp"
+                android:paddingBottom="1dp"
+                android:text="영업시간"
+                android:textColor="#888888"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/poiTel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="1dp"
+                android:text="010-0000-0000"
+                android:textColor="#888888"
+                android:textSize="13sp" />
+
             <TextView
                 android:id="@+id/poiOption"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:paddingTop="1dp"
                 android:text="매장 내 식사 · 테이크아웃"
                 android:textColor="#888888"
-                android:textSize="13sp"
-                android:paddingTop="1dp"/>
+                android:textSize="13sp" />
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

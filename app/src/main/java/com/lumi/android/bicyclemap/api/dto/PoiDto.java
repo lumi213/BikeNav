@@ -11,6 +11,8 @@ public class PoiDto {
     private String addr;
     private String hour;
     private double rate;
+    private String tel;
+    private String tag;
     private List<ImageDto> images;
 
     // Getters
@@ -22,6 +24,8 @@ public class PoiDto {
     public String getAddr() { return addr; }
     public String getHour() { return hour; }
     public double getRate() { return rate; }
+    public String getTel() { return tel; }
+    public String getTag() { return tag; }
     public List<ImageDto> getImages() { return images; }
 
     // Setters

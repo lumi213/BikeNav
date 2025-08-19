@@ -9,6 +9,7 @@ import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
 import com.lumi.android.bicyclemap.POI;
+import com.lumi.android.bicyclemap.api.dto.PoiDto;
 import com.lumi.android.bicyclemap.api.dto.PoiListResponse;
 import com.lumi.android.bicyclemap.repository.PoiRepository;
 
@@ -65,9 +66,9 @@ public class SurroundingViewModel extends ViewModel {
     public void loadPoiDetail(int courseId, int placeId) {
         if (poiRepository != null) {
             isLoading.setValue(true);
-            poiRepository.getPoiDetail(courseId, placeId, new PoiRepository.RepositoryCallback<com.lumi.android.bicyclemap.api.dto.PoiDto>() {
+            poiRepository.getPoiDetail(courseId, placeId, new PoiRepository.RepositoryCallback<PoiDto>() {
                 @Override
-                public void onSuccess(com.lumi.android.bicyclemap.api.dto.PoiDto poi) {
+                public void onSuccess(PoiDto poi) {
                     isLoading.setValue(false);
                     // 상세 정보 처리
                 }

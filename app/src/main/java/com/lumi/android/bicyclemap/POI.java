@@ -1,6 +1,8 @@
 package com.lumi.android.bicyclemap;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class POI implements Serializable {
@@ -13,7 +15,9 @@ public class POI implements Serializable {
     public double rate;
     public String menu;
     public String tel;
-    public String image;
+    public List<String> tags = new ArrayList<>();
+    public List<String> imageUrls = new ArrayList<>();
+    public String mainImageUrl; // 카드 썸네일
     public String explanation;
 
     // 선택적으로 getter 추가
@@ -26,7 +30,7 @@ public class POI implements Serializable {
     }
 
     public String getImage() {
-        return image;
+        return mainImageUrl;
     }
 
     public String getExplanation() {

@@ -39,14 +39,17 @@ import com.lumi.android.bicyclemap.ui.surrounding.SurroundingFragment;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 
 import retrofit2.Response;
 import android.content.Intent;
 import androidx.core.content.ContextCompat;
 import com.lumi.android.bicyclemap.service.TrackingService;
+import com.lumi.android.bicyclemap.ui.tour.TourFragment;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -101,7 +104,10 @@ public class MainActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
 
-            if (itemId == R.id.navigation_course) {
+            if (itemId == R.id.navigation_tour) {
+                replaceFragment(new TourFragment(), false);
+                return true;
+            } else if (itemId == R.id.navigation_course) {
                 replaceFragment(new CourseFragment(), false);
                 return true;
             } else if (itemId == R.id.navigation_maps) {
@@ -208,7 +214,6 @@ public class MainActivity extends AppCompatActivity {
     /**
      * 서버에서 코스 목록을 받아와 Route 리스트로 반환한다.
      * - /api/course/list (GET)
-     * - course_poi.json(assets)로부터 courseId → poiId[] 매핑을 읽어, 반환하는 Route에 setPoiIds(...)로 주입한다.
      * - 주의: 동기 호출(execute)이라서 반드시 백그라운드 스레드에서 호출하세요.
      */
     private List<Route> loadRoutes(Map<Integer, List<Integer>> coursePoiMap) {
@@ -334,6 +339,8 @@ public class MainActivity extends AppCompatActivity {
     // MainThread에서 호출하지 말 것 (execute() 사용)
     private Map<Integer, POI> loadPoi() {
         Map<Integer, POI> result = new HashMap<>();
+        Set<Integer> fetched = new HashSet<>(); // 상세 중복 호출 방지
+
         try {
             ApiService api = ApiClient.getInstance(this).getApiService();
 
@@ -353,28 +360,77 @@ public class MainActivity extends AppCompatActivity {
                     Response<PoiListResponse> poiResp =
                             api.getPois(courseId, null).execute();
 
-                    if (poiResp.isSuccessful() && poiResp.body() != null
+                    if (!(poiResp.isSuccessful() && poiResp.body() != null
                             && poiResp.body().isSuccess()
                             && poiResp.body().getData() != null
-                            && poiResp.body().getData().getPois() != null) {
+                            && poiResp.body().getData().getPois() != null)) {
+                        continue;
+                    }
 
-                        for (PoiDto d : poiResp.body().getData().getPois()) {
-                            POI poi = new POI();
-                            poi.id = (int) d.getId();
-                            poi.name = d.getName();
-                            poi.type = d.getType(); // "biz" | "util" | "tourist"
+                    for (PoiDto d : poiResp.body().getData().getPois()) {
+                        int pid = d.getId();
 
-                            // 좌표 매핑
-                            if (d.getPoint() != null) {
-                                Point pt = new Point(d.getPoint().getLat(),d.getPoint().getLng());
-                                poi.point = pt;
-                            }
+                        // 기존/중복 POI 객체 재사용
+                        POI poi = result.getOrDefault(pid, new POI());
+                        poi.id = pid;
+                        poi.name = d.getName();
+                        poi.type = d.getType(); // "biz" | "util" | "tourist"
 
-                            poi.explanation = d.getExplanation();
-
-                            // 같은 id가 여러 코스에 중복 등장할 수 있어 마지막 값으로 덮어씀
-                            result.put(poi.id, poi);
+                        // 좌표
+                        if (d.getPoint() != null) {
+                            poi.point = new Point(d.getPoint().getLat(), d.getPoint().getLng());
                         }
+                        poi.explanation = d.getExplanation();
+
+                        // ===== 상세 정보 (한 번만 호출) =====
+                        if (!fetched.contains(pid)) {
+                            try {
+                                Response<ApiResponse<PoiDto>> detailResp =
+                                        api.getPoiDetail(courseId, pid).execute();
+
+                                if (detailResp.isSuccessful()
+                                        && detailResp.body() != null
+                                        && detailResp.body().isSuccess()
+                                        && detailResp.body().getData() != null) {
+
+                                    PoiDto detail = detailResp.body().getData();
+
+                                    poi.addr = detail.getAddr();
+                                    poi.hour = parseHours(detail.getHour()); // 보기 좋게 정리
+                                    poi.rate = detail.getRate();
+                                    poi.tel  = detail.getTel();
+
+                                    // tag 문자열 -> List<String> + menu(조합 문자열)
+                                    List<String> tags = parseTags(detail.getTag());
+                                    poi.tags.clear();
+                                    poi.tags.addAll(tags);
+                                    poi.menu = joinWithDot(tags); // 어댑터 옵션 라인에 사용됨
+
+                                    // 이미지: main 우선, 없으면 첫 번째
+                                    poi.imageUrls.clear();
+                                    String main = null;
+                                    if (detail.getImages() != null) {
+                                        for (PoiDto.ImageDto im : detail.getImages()) {
+                                            if (im == null || im.getUrl() == null) continue;
+                                            poi.imageUrls.add(im.getUrl());
+                                            if (im.isIs_main() && main == null) {
+                                                main = im.getUrl();
+                                            }
+                                        }
+                                    }
+                                    if (main == null && !poi.imageUrls.isEmpty()) {
+                                        main = poi.imageUrls.get(0);
+                                    }
+                                    poi.mainImageUrl = main;
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace(); // 개별 실패는 무시
+                            }
+                            fetched.add(pid);
+                        }
+
+                        // 맵에 반영 (중복 id는 마지막 값으로 덮어씀)
+                        result.put(pid, poi);
                     }
                 }
             }
@@ -382,6 +438,63 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return result;
+    }
+
+    /* ================== 보조 파서 ================== */
+
+    // hour 예: "{'운영일': ['매일'], '운영시간': ['08:00-21:00']}"
+    private String parseHours(String raw) {
+        if (raw == null || raw.trim().isEmpty()) return "";
+        try {
+            String fixed = raw.replace('\'', '"'); // 서버가 '...' 로 줄 때 대비
+            org.json.JSONObject o = new org.json.JSONObject(fixed);
+            String day  = joinJsonArray(o.optJSONArray("운영일"));
+            String time = joinJsonArray(o.optJSONArray("운영시간"));
+            if (!day.isEmpty() && !time.isEmpty()) return day + " " + time;
+            if (!time.isEmpty()) return time;
+            return day;
+        } catch (Exception e) {
+            return raw;
+        }
+    }
+
+    private String joinJsonArray(org.json.JSONArray arr) {
+        if (arr == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < arr.length(); i++) {
+            if (i > 0) sb.append(", ");
+            sb.append(arr.optString(i));
+        }
+        return sb.toString();
+    }
+
+    // tag 예: "[{\"tag1\":\"한식\"},{\"tag2\":\"면요리\"}]"
+    private List<String> parseTags(String raw) {
+        List<String> out = new ArrayList<>();
+        if (raw == null || raw.trim().isEmpty()) return out;
+        try {
+            org.json.JSONArray arr = new org.json.JSONArray(raw);
+            for (int i = 0; i < arr.length(); i++) {
+                org.json.JSONObject o = arr.optJSONObject(i);
+                if (o == null) continue;
+                for (java.util.Iterator<String> it = o.keys(); it.hasNext();) {
+                    String k = it.next();
+                    String v = o.optString(k, null);
+                    if (v != null && !v.isEmpty()) out.add(v);
+                }
+            }
+        } catch (Exception ignore) {}
+        return out;
+    }
+
+    private String joinWithDot(List<String> items) {
+        if (items == null || items.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < items.size(); i++) {
+            if (i > 0) sb.append(" · ");
+            sb.append(items.get(i));
+        }
+        return sb.toString();
     }
 
     private BroadcastReceiver arriveReceiver;

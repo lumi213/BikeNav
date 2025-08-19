@@ -6,6 +6,13 @@
     app:startDestination="@id/navigation_maps">
 
     <fragment
+        android:id="@+id/navigation_tour"
+        android:name="com.lumi.android.bicyclemap.ui.tour.TourFragment"
+        android:label="@string/title_tour"
+        tools:layout="@layout/fragment_tour" >
+    </fragment>
+
+    <fragment
         android:id="@+id/navigation_surrounding"
         android:name="com.lumi.android.bicyclemap.ui.surrounding.SurroundingFragment"
         android:label="@string/title_surrounding"

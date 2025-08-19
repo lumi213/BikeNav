@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.google.android.gms.actions.ItemListIntents;
 
 public class POIAdapter extends ListAdapter<POI, POIAdapter.POIViewHolder> {
 
@@ -36,21 +37,21 @@ public class POIAdapter extends ListAdapter<POI, POIAdapter.POIViewHolder> {
 
         // 텍스트
         h.name.setText(p.name);
-        h.rating.setText(p.rate > 0 ? String.format("%.1f", p.rate) : "-");
-        h.category.setText(categoryToKor(p.type));
-        h.time.setText(p.hour != null ? p.hour : "");
+        h.rating.setText(p.rate > 0 ? String.format("%.1f", p.rate) : "0");
+        h.category.setText(categoryToKor(p));
+        h.time.setText(makeHourString(p.hour));
+        h.tel.setText(p.tel);
         h.option.setText(makeOptionString(p));
 
         // 이미지
-        final int PLACEHOLDER = R.drawable.loading;       // 로딩 중
-        final int ERROR_IMG   = R.drawable.sample_image;  // 로딩 실패
-        final int NO_URL_IMG  = R.drawable.noimg;         // URL 없음
+        final int PLACEHOLDER = R.drawable.loading;
+        final int ERROR_IMG   = R.drawable.sample_image;
+        final int NO_URL_IMG  = R.drawable.noimg;
 
-        if (p.image != null && !p.image.trim().isEmpty()) {
-            String src = p.image.trim();
-            Object glideSrc = src.startsWith("data:image")
-                    ? Uri.parse(src)           // data URI
-                    : src;                     // http / https
+        String img = p.getImage(); // ★ POI.getImage() == mainImageUrl
+        if (img != null && !img.trim().isEmpty()) {
+            String src = img.trim();
+            Object glideSrc = src.startsWith("data:image") ? Uri.parse(src) : src;
 
             Glide.with(h.image.getContext())
                     .load(glideSrc)
@@ -79,33 +80,37 @@ public class POIAdapter extends ListAdapter<POI, POIAdapter.POIViewHolder> {
 
     /* ───────────────────────── ViewHolder ───────────────────────── */
     static class POIViewHolder extends RecyclerView.ViewHolder {
-        ImageView image;  TextView name, rating, category, time, option;
+        ImageView image, ratingImg;  TextView name, rating, category, time, option, tel;
         POIViewHolder(@NonNull View v) {
             super(v);
             image     = v.findViewById(R.id.poiImage);
+            ratingImg = v.findViewById(R.id.poiRatingImg);
             name      = v.findViewById(R.id.poiName);
             rating    = v.findViewById(R.id.poiRating);
             category  = v.findViewById(R.id.poiCategory);
             time      = v.findViewById(R.id.poiTime);
             option    = v.findViewById(R.id.poiOption);
+            tel       = v.findViewById(R.id.poiTel);
         }
     }
 
     /* ───────────────────────── 유틸 함수 ───────────────────────── */
-    private static String categoryToKor(String t){
-        if("Restaurant".equalsIgnoreCase(t)||"음식점".equals(t)) return "음식점";
-        if("Cafe".equalsIgnoreCase(t)      ||"카페".equals(t))   return "카페";
-        if("Toilet".equalsIgnoreCase(t)    ||"화장실".equals(t)) return "화장실";
-        return t!=null ? t : "";
+    private static String categoryToKor(POI p){
+        StringBuilder sb = new StringBuilder();
+        if("biz".equalsIgnoreCase(p.type)) sb.append("상권") ;
+        if("util".equalsIgnoreCase(p.type)) sb.append("편의시설");
+        if("tourist".equalsIgnoreCase(p.type)) sb.append("관광지");
+        if (p.tags != null && !p.tags.isEmpty()) sb.append(" * "+p.tags.get(0));
+        return sb.toString();
+    }
+
+    private static String makeHourString(String s){
+        return s;
     }
 
     private static String makeOptionString(POI p){
         StringBuilder sb = new StringBuilder();
         if (p.menu != null && !p.menu.isEmpty()) sb.append(p.menu);
-        if (p.tel  != null && !p.tel.isEmpty()) {
-            if (sb.length() > 0) sb.append(" · ");
-            sb.append("☎ ").append(p.tel);
-        }
         return sb.toString();
     }
 }

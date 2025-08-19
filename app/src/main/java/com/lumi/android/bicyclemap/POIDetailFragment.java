@@ -55,11 +55,11 @@ public class POIDetailFragment extends BottomSheetDialogFragment {
             final int ERROR_IMG   = R.drawable.sample_image;  // 로딩 실패
             final int NO_URL_IMG  = R.drawable.noimg;         // URL 없음
 
-            if (poi.image != null && !poi.image.trim().isEmpty()) {
+            if (poi.mainImageUrl != null && !poi.mainImageUrl.trim().isEmpty()) {
                 // http/https URL 또는 data:image;base64 형식 모두 처리
                 ImageLoader.loadFlexible(
                         requireContext(),
-                        poi.image.trim(),
+                        poi.mainImageUrl.trim(),
                         img,
                         PLACEHOLDER      // placeholder & error = loading
                 );
