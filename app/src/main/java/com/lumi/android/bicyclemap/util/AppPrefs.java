@@ -48,4 +48,24 @@ public final class AppPrefs {
     public static void clearAll(Context c) {
         prefs(c).edit().clear().apply();
     }
+
+    // 기존 클래스에 아래 키/메소드만 추가
+    // --- 새 키 ---
+    private static final String KEY_LAST_LOGIN_ID = "last_login_id";
+    private static final String KEY_AUTO_LOGIN    = "auto_login";
+
+    // --- 새 메소드 ---
+    public static void setLastLoginId(Context c, String id) {
+        prefs(c).edit().putString(KEY_LAST_LOGIN_ID, id).apply();
+    }
+    public static String getLastLoginId(Context c) {
+        return prefs(c).getString(KEY_LAST_LOGIN_ID, null);
+    }
+
+    public static void setAutoLogin(Context c, boolean enabled) {
+        prefs(c).edit().putBoolean(KEY_AUTO_LOGIN, enabled).apply();
+    }
+    public static boolean isAutoLogin(Context c) {
+        return prefs(c).getBoolean(KEY_AUTO_LOGIN, false);
+    }
 }

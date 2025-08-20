@@ -46,6 +46,13 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.1")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    // Room
+    implementation("androidx.room:room-runtime:2.6.1")
+    annotationProcessor("androidx.room:room-compiler:2.6.1")
+
+    // (선택) 코루틴/LiveData 연동이 필요하다면
+    implementation("androidx.room:room-ktx:2.6.1")
     
     // 네트워킹 라이브러리(retrofit2, okhttp3)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

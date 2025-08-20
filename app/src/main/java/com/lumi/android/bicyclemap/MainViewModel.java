@@ -11,6 +11,7 @@ import com.lumi.android.bicyclemap.api.dto.CourseDto;
 import com.lumi.android.bicyclemap.api.dto.CourseListResponse;
 import com.lumi.android.bicyclemap.api.dto.PoiDto;
 import com.lumi.android.bicyclemap.api.dto.VillagesDto;
+import com.lumi.android.bicyclemap.data.local.entity.CompletedCourseEntity;
 import com.lumi.android.bicyclemap.repository.CourseRepository;
 
 import java.util.List;
@@ -138,5 +139,32 @@ public class MainViewModel extends ViewModel {
         mapState.setValue(MapState.GENERAL);
         selectedRoute.setValue(null);
         emitClearMapEvent();
+    }
+
+    // 필드 추가
+    private com.lumi.android.bicyclemap.data.repository.CompletedCourseRepository completedRepo;
+
+    // 생성자 또는 init에서 Context 주입 시 초기화
+    public void init(Context c) {
+        if (completedRepo == null) {
+            completedRepo = new com.lumi.android.bicyclemap.data.repository.CompletedCourseRepository(c.getApplicationContext());
+        }
+    }
+
+    // 메소드 추가
+    public void markCourseCompleted(int courseId, String title, Runnable onDone) {
+        if (completedRepo != null) {
+            completedRepo.markCompleted(courseId, title, onDone);
+        }
+    }
+    public void fetchCompleted(com.lumi.android.bicyclemap.data.repository.CompletedCourseRepository.Callback<List<CompletedCourseEntity>> cb) {
+        if (completedRepo != null) {
+            completedRepo.getAll(cb);
+        }
+    }
+    public void isCourseCompleted(int courseId, com.lumi.android.bicyclemap.data.repository.CompletedCourseRepository.Callback<Boolean> cb) {
+        if (completedRepo != null) {
+            completedRepo.isCompleted(courseId, cb);
+        }
     }
 }
