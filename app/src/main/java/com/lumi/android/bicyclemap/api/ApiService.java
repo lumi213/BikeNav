@@ -11,6 +11,8 @@ import com.lumi.android.bicyclemap.api.dto.PoiListResponse;
 import com.lumi.android.bicyclemap.api.dto.ReviewRequest;
 import com.lumi.android.bicyclemap.api.dto.TrackingRequest;
 import com.lumi.android.bicyclemap.api.dto.TrackingResponse;
+import com.lumi.android.bicyclemap.api.dto.VillagesDto;
+import com.lumi.android.bicyclemap.api.dto.VillagesListResponse;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -39,7 +41,7 @@ public interface ApiService {
     @GET("api/course/{courseId}")
     Call<ApiResponse<CourseDto>> getCourseDetail(@Path("courseId") int courseId);
     
-    // 3. POI API
+    // 3-1. POI API
     @GET("api/course/{courseId}/pois")
     Call<PoiListResponse> getPois(
         @Path("courseId") int courseId,
@@ -58,7 +60,18 @@ public interface ApiService {
         @Path("placeId") int placeId,
         @Body ReviewRequest request
     );
-    
+
+    // 3-2. TOUR API
+    @GET("/api/villages/specialties")
+    Call<VillagesListResponse> getVillages();
+
+    @GET("/api/villages/{villageId}/specialties/{type}/{id}")
+    Call<ApiResponse<VillagesDto>> getVillagesDetail(
+            @Path("villageId") int villageId,
+            @Path("type") String type,
+            @Path("id") int id
+    );
+
     // 4. 위치 API
     @POST("api/user/location")
     Call<ApiResponse> sendLocation(@Body LocationRequest request);

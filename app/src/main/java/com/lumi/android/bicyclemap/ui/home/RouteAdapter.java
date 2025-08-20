@@ -1,4 +1,4 @@
-package com.lumi.android.bicyclemap;
+package com.lumi.android.bicyclemap.ui.home;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,10 +12,13 @@ import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.lumi.android.bicyclemap.MainViewModel;
+import com.lumi.android.bicyclemap.R;
+import com.lumi.android.bicyclemap.api.dto.CourseDto;
 import com.lumi.android.bicyclemap.util.ImageLoader;
 
-public class RouteAdapter extends ListAdapter<Route, RouteAdapter.ViewHolder> {
-    public interface OnRouteClickListener { void onRouteClick(Route route, int position); }
+public class RouteAdapter extends ListAdapter<CourseDto, RouteAdapter.ViewHolder> {
+    public interface OnRouteClickListener { void onRouteClick(CourseDto route, int position); }
     private OnRouteClickListener listener;
     public void setOnRouteClickListener(OnRouteClickListener l) { this.listener = l; }
     private final MainViewModel viewModel;
@@ -39,19 +42,19 @@ public class RouteAdapter extends ListAdapter<Route, RouteAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Route route = getItem(position);
+        CourseDto route = getItem(position);
 
-        holder.title.setText(route.title);
-        holder.info.setText("약 " + route.dist_km + "km · " + route.time + "분");
+        holder.title.setText(route.getTitle());
+        holder.info.setText("약 " + route.getDist_km() + "km · " + route.getTime() + "분");
 
-        boolean isBike = "bike".equalsIgnoreCase(route.type == null ? "" : route.type.trim());
+        boolean isBike = "bike".equalsIgnoreCase(route.getType() == null ? "" : route.getType().trim());
         // 카테고리별 기본 이미지 결정
         int fallbackResId = isBike          // ← Route 모델에 boolean isBike 필드(또는 비슷한 구분값)가 있다고 가정
                 ? R.drawable.bike_route
                 : R.drawable.walk_route;
 
         // URL → ImageView (비어 있거나 실패 시 fallback 사용)
-        String imgUrl = route.image;              // 서버에서 받은 절대 URL (null/"" 일 수 있음)
+        String imgUrl = route.getImage();              // 서버에서 받은 절대 URL (null/"" 일 수 있음)
 
         if (imgUrl == null || imgUrl.trim().isEmpty()) {
             // URL이 없으면 즉시 기본 이미지 표시
@@ -98,17 +101,17 @@ public class RouteAdapter extends ListAdapter<Route, RouteAdapter.ViewHolder> {
         }
     }
 
-    public static final DiffUtil.ItemCallback<Route> DIFF_CALLBACK = new DiffUtil.ItemCallback<Route>() {
+    public static final DiffUtil.ItemCallback<CourseDto> DIFF_CALLBACK = new DiffUtil.ItemCallback<CourseDto>() {
         @Override
-        public boolean areItemsTheSame(@NonNull Route oldItem, @NonNull Route newItem) {
-            return oldItem.title.equals(newItem.title);
+        public boolean areItemsTheSame(@NonNull CourseDto oldItem, @NonNull CourseDto newItem) {
+            return oldItem.getTitle().equals(newItem.getTitle());
         }
 
         @Override
-        public boolean areContentsTheSame(@NonNull Route oldItem, @NonNull Route newItem) {
-            return oldItem.dist_km == newItem.dist_km &&
-                    oldItem.time == newItem.time &&
-                    oldItem.image.equals(newItem.image);
+        public boolean areContentsTheSame(@NonNull CourseDto oldItem, @NonNull CourseDto newItem) {
+            return oldItem.getDist_km() == newItem.getDist_km() &&
+                    oldItem.getTime() == newItem.getTime() &&
+                    oldItem.getImage().equals(newItem.getImage());
         }
     };
 }

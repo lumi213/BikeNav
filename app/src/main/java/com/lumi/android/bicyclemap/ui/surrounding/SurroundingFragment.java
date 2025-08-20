@@ -2,7 +2,6 @@ package com.lumi.android.bicyclemap.ui.surrounding;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -21,9 +20,8 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.lumi.android.bicyclemap.MainViewModel;
-import com.lumi.android.bicyclemap.POI;
-import com.lumi.android.bicyclemap.POIAdapter;
 import com.lumi.android.bicyclemap.R;
+import com.lumi.android.bicyclemap.api.dto.PoiDto;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,7 +40,7 @@ public class SurroundingFragment extends Fragment {
     }
 
     private FilterCategory currentFilter = FilterCategory.ALL;
-    private List<POI> latestPoiList = new ArrayList<>();
+    private List<PoiDto> latestPoiList = new ArrayList<>();
 
     private FusedLocationProviderClient fusedLocationClient;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1201;
@@ -81,10 +79,10 @@ public class SurroundingFragment extends Fragment {
                         poiIdStrings.add(String.valueOf(id));
                     }
                 }
-                Map<Integer, POI> intMap = mainViewModel.getPoiMap().getValue();
+                Map<Integer, PoiDto> intMap = mainViewModel.getPoiMap().getValue();
                 if (intMap != null) {
-                    Map<String, POI> stringMap = new HashMap<>();
-                    for (Map.Entry<Integer, POI> entry : intMap.entrySet()) {
+                    Map<String, PoiDto> stringMap = new HashMap<>();
+                    for (Map.Entry<Integer, PoiDto> entry : intMap.entrySet()) {
                         stringMap.put(String.valueOf(entry.getKey()), entry.getValue());
                     }
                     viewModel.setPoiMap(stringMap);
@@ -148,15 +146,15 @@ public class SurroundingFragment extends Fragment {
                     double userLng = location.getLongitude();
 
                     // 전체 POI 리스트 (POI Map이 Integer, POI로 되어 있다고 가정)
-                    Map<Integer, POI> poiMap = mainViewModel.getPoiMap().getValue();
-                    List<POI> allPoiList = new ArrayList<>();
+                    Map<Integer, PoiDto> poiMap = mainViewModel.getPoiMap().getValue();
+                    List<PoiDto> allPoiList = new ArrayList<>();
                     if (poiMap != null) {
                         allPoiList.addAll(poiMap.values());
                     }
 
-                    List<POI> nearbyPoiList = new ArrayList<>();
-                    for (POI poi : allPoiList) {
-                        double dist = distance(userLat, userLng, poi.getLatitude(), poi.getLongitude());
+                    List<PoiDto> nearbyPoiList = new ArrayList<>();
+                    for (PoiDto poi : allPoiList) {
+                        double dist = distance(userLat, userLng, poi.getPoint().getLat(), poi.getPoint().getLng());
                         if (dist <= 1.0) { // 1km 이내
                             nearbyPoiList.add(poi);
                         }
@@ -190,21 +188,21 @@ public class SurroundingFragment extends Fragment {
     }
 
     private void filterPOIList() {
-        List<POI> filteredList = new ArrayList<>();
+        List<PoiDto> filteredList = new ArrayList<>();
         switch (currentFilter) {
             case BIZ:
-                for (POI poi : latestPoiList)
-                    if ("biz".equalsIgnoreCase(poi.getCategory()) || "상권".equals(poi.getCategory()))
+                for (PoiDto poi : latestPoiList)
+                    if ("biz".equalsIgnoreCase(poi.getType()) || "상권".equals(poi.getType()))
                         filteredList.add(poi);
                 break;
             case UTIL:
-                for (POI poi : latestPoiList)
-                    if ("util".equalsIgnoreCase(poi.getCategory()) || "편의 시설".equals(poi.getCategory()))
+                for (PoiDto poi : latestPoiList)
+                    if ("util".equalsIgnoreCase(poi.getType()) || "편의 시설".equals(poi.getType()))
                         filteredList.add(poi);
                 break;
             case TOURIST:
-                for (POI poi : latestPoiList)
-                    if ("tourist".equalsIgnoreCase(poi.getCategory()) || "관광지".equals(poi.getCategory()))
+                for (PoiDto poi : latestPoiList)
+                    if ("tourist".equalsIgnoreCase(poi.getType()) || "관광지".equals(poi.getType()))
                         filteredList.add(poi);
                 break;
             case ALL:

@@ -1,76 +1,107 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:padding="12dp"
-    android:orientation="horizontal">
+    android:layout_height="wrap_content">
 
-    <!-- 코스 이미지 -->
-    <ImageView
-        android:id="@+id/course_image"
-        android:layout_width="120dp"
-        android:layout_height="140dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/sample_image" />
-
+    <!-- 1) 컨텐츠 레이어 (기존 LinearLayout 그대로) -->
     <LinearLayout
-        android:layout_width="0dp"
+        android:id="@+id/contentLayer"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_weight="1"
-        android:orientation="vertical">
-        <!-- 코스 제목 -->
-        <TextView
-            android:id="@+id/course_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="북한산 둘레길 (평창마을길)"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginTop="8dp" />
+        android:padding="12dp"
+        android:orientation="horizontal">
 
-        <!-- 코스 설명 -->
-        <TextView
-            android:id="@+id/course_desc"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="경로 5.0km · 2시간 30분 · 비순환형"
-            android:textSize="13sp"
-            android:textColor="#777777"
-            android:layout_marginTop="4dp" />
+        <!-- 코스 이미지 + 텍스트들 (네가 올린 내용 그대로) -->
+        <ImageView
+            android:id="@+id/course_image"
+            android:layout_width="120dp"
+            android:layout_height="140dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/sample_image" />
 
-        <!-- 코스 설명 -->
-        <TextView
-            android:id="@+id/course_summary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="건물 하나하나가 조형 예술품..."
-            android:textSize="13sp"
-            android:textColor="#777777"
-            android:layout_marginTop="4dp" />
-
-        <!-- 해시태그 -->
         <LinearLayout
-            android:id="@+id/course_tags"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="6dp">
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
+            <!-- 난이도 배지 -->
             <TextView
+                android:id="@+id/course_diff"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="#풍경"
+                android:text=" 중"
                 android:textSize="12sp"
-                android:textColor="#555555"
-                android:layout_marginEnd="8dp" />
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:background="@drawable/ic_diff" />
 
+            <!-- 제목 -->
             <TextView
+                android:id="@+id/course_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="#비순환형"
-                android:textSize="12sp"
-                android:textColor="#555555" />
+                android:text="북한산 둘레길 (평창마을길)"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <!-- 설명 -->
+            <TextView
+                android:id="@+id/course_desc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="경로 5.0km · 2시간 30분 · 비순환형"
+                android:textSize="13sp"
+                android:textColor="#777777"
+                android:layout_marginTop="4dp" />
+
+            <!-- 요약 -->
+            <TextView
+                android:id="@+id/course_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="45dp"
+                android:text="건물 하나하나가 조형 예술품..."
+                android:textSize="13sp"
+                android:textColor="#777777"
+                android:layout_marginTop="4dp" />
+
+            <!-- 해시태그 -->
+            <LinearLayout
+                android:id="@+id/course_tags"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="6dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="#풍경"
+                    android:textSize="12sp"
+                    android:textColor="#555555"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="#비순환형"
+                    android:textSize="12sp"
+                    android:textColor="#555555" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+
+    <!-- 2) 도장 오버레이 레이어 (GONE → 필요 시 VISIBLE) -->
+    <ImageView
+        android:id="@+id/overlayStamp"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:layout_gravity="center"
+        android:rotation="-10"
+        android:visibility="gone"
+        android:alpha="0.95"
+        android:src="@drawable/stamp"
+        android:clickable="false"
+        android:focusable="false" />
+</FrameLayout>

@@ -1,22 +1,36 @@
 package com.lumi.android.bicyclemap.api.dto;
 
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.annotations.SerializedName;
+import com.lumi.android.bicyclemap.Point;
+
+import java.io.Serializable;
 import java.util.List;
 
-public class CourseDto {
-    private int course_id;
-    private String title;
-    private double dist_km;
-    private int time;
+public class CourseDto implements Serializable {
+    private static final long serialVersionUID = 1L;
+    @SerializedName("course_id") private int course_id;
     private String image;
-    private int diff;
     private boolean is_recommended;
+    @SerializedName(value = "diff", alternate = {"difficulty"})
+    private int diff;
+    @SerializedName("time") private int time;
+    @SerializedName("title") private String title;
+    @SerializedName(value = "type", alternate = {"course_type"})
     private String type;
-    private List<PointDto> path;
+    @SerializedName(value = "dist_km", alternate = {"distance_km", "distance"})
+    private double dist_km;
+    @SerializedName(value = "path", alternate = {"path_points", "polyline"})
+    private List<Point> path;
     private String description;
     private List<ImageDto> images;
+    @SerializedName(value = "tags", alternate = {"tag"})
+    @JsonAdapter(TagsFlexAdapter.class)
     private List<String> tags;
     private List<String> tourist_spots;
     private List<String> nearby_businesses;
+
+    public List<Integer> poi;   // 코스 주변 poi id
 
     // Getters
     public int getCourse_id() { return course_id; }
@@ -27,12 +41,13 @@ public class CourseDto {
     public int getDiff() { return diff; }
     public boolean isIs_recommended() { return is_recommended; }
     public String getType() { return type; }
-    public List<PointDto> getPath() { return path; }
+    public List<Point> getPath() { return path; }
     public String getDescription() { return description; }
     public List<ImageDto> getImages() { return images; }
     public List<String> getTags() { return tags; }
     public List<String> getTourist_spots() { return tourist_spots; }
     public List<String> getNearby_businesses() { return nearby_businesses; }
+    public List<Integer> getPoi() { return  poi; }
 
     // Setters
     public void setCourse_id(int course_id) { this.course_id = course_id; }
@@ -43,24 +58,16 @@ public class CourseDto {
     public void setDiff(int diff) { this.diff = diff; }
     public void setIs_recommended(boolean is_recommended) { this.is_recommended = is_recommended; }
     public void setType(String type) { this.type = type; }
-    public void setPath(List<PointDto> path) { this.path = path; }
+    public void setPath(List<Point> path) { this.path = path; }
     public void setDescription(String description) { this.description = description; }
     public void setImages(List<ImageDto> images) { this.images = images; }
     public void setTags(List<String> tags) { this.tags = tags; }
     public void setTourist_spots(List<String> tourist_spots) { this.tourist_spots = tourist_spots; }
     public void setNearby_businesses(List<String> nearby_businesses) { this.nearby_businesses = nearby_businesses; }
+    public void setPoi(List<Integer> poi) { this.poi = poi; }
 
-    public static class PointDto {
-        private double lat;
-        private double lng;
-
-        public double getLat() { return lat; }
-        public double getLng() { return lng; }
-        public void setLat(double lat) { this.lat = lat; }
-        public void setLng(double lng) { this.lng = lng; }
-    }
-
-    public static class ImageDto {
+    public static class ImageDto implements Serializable {
+        private static final long serialVersionUID = 1L;
         private String url;
         private boolean is_main;
 

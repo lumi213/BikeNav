@@ -12,6 +12,7 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
+        <item name="android:windowSplashScreenBackground">@color/app_background</item>
         <!-- ActionBar 제거 설정 -->
         <item name="android:windowNoTitle">true</item>
         <item name="windowActionBar">false</item>

@@ -7,7 +7,10 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.lumi.android.bicyclemap.api.dto.CourseDto;
 import com.lumi.android.bicyclemap.api.dto.CourseListResponse;
+import com.lumi.android.bicyclemap.api.dto.PoiDto;
+import com.lumi.android.bicyclemap.api.dto.VillagesDto;
 import com.lumi.android.bicyclemap.repository.CourseRepository;
 
 import java.util.List;
@@ -27,13 +30,18 @@ public class MainViewModel extends ViewModel {
     public void setMapState(MapState state) { mapState.setValue(state); }
 
     // 전체 경로 리스트
-    private final MutableLiveData<List<Route>> allRoutes = new MutableLiveData<>();
+    private final MutableLiveData<List<CourseDto>> allRoutes = new MutableLiveData<>();
 
     // 전체 POI Map (id → POI)
-    private final MutableLiveData<Map<Integer, POI>> poiMap = new MutableLiveData<>();
+    private final MutableLiveData<Map<Integer, PoiDto>> poiMap = new MutableLiveData<>();
+
+    // ✅ Villages 전체(상세 포함) LiveData
+    private final MutableLiveData<List<VillagesDto>> villages = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> villagesLoading = new MutableLiveData<>(false);
+    private final MutableLiveData<String> villagesError = new MutableLiveData<>(null);
 
     // 선택된 경로
-    private final MutableLiveData<Route> selectedRoute = new MutableLiveData<>();
+    private final MutableLiveData<CourseDto> selectedRoute = new MutableLiveData<>();
 
     // Repository
     private CourseRepository courseRepository;
@@ -46,27 +54,35 @@ public class MainViewModel extends ViewModel {
 
     // === getter/setter ===
 
-    public LiveData<List<Route>> getAllRoutes() {
+    public LiveData<List<CourseDto>> getAllRoutes() {
         return allRoutes;
     }
 
-    public void setAllRoutes(List<Route> routes) {
+    public void setAllRoutes(List<CourseDto> routes) {
         allRoutes.setValue(routes);
     }
 
-    public LiveData<Map<Integer, POI>> getPoiMap() {
+    public LiveData<Map<Integer, PoiDto>> getPoiMap() {
         return poiMap;
     }
 
-    public void setPoiMap(Map<Integer, POI> poiMap) {
+    public void setPoiMap(Map<Integer, PoiDto> poiMap) {
         this.poiMap.setValue(poiMap);
     }
 
-    public LiveData<Route> getSelectedRoute() {
+    public LiveData<List<VillagesDto>> getVillages() { return villages; }
+    public LiveData<Boolean> getVillagesLoading() { return villagesLoading; }
+    public LiveData<String> getVillagesError() { return villagesError; }
+
+    public void setVillages(List<VillagesDto> list) { villages.setValue(list); }
+    public void setVillagesLoading(boolean loading) { villagesLoading.setValue(loading); }
+    public void setVillagesError(String err) { villagesError.setValue(err); }
+
+    public LiveData<CourseDto> getSelectedRoute() {
         return selectedRoute;
     }
 
-    public void setSelectedRoute(Route route) {
+    public void setSelectedRoute(CourseDto route) {
         selectedRoute.setValue(route);
         Log.d("Surrounding","set route: " + route);
     }

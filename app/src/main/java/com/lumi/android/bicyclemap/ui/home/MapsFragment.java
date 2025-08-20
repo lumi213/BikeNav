@@ -49,12 +49,10 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.lumi.android.bicyclemap.MainViewModel;
-import com.lumi.android.bicyclemap.POI;
-import com.lumi.android.bicyclemap.POIDetailFragment;
 import com.lumi.android.bicyclemap.Point;
 import com.lumi.android.bicyclemap.R;
-import com.lumi.android.bicyclemap.Route;
-import com.lumi.android.bicyclemap.RouteAdapter;
+import com.lumi.android.bicyclemap.api.dto.CourseDto;
+import com.lumi.android.bicyclemap.api.dto.PoiDto;
 import com.lumi.android.bicyclemap.api.kakao.KakaoNaviClient;
 import com.lumi.android.bicyclemap.api.kakao.KakaoNaviService;
 import com.lumi.android.bicyclemap.api.kakao.KakaoRouteResponse;
@@ -81,8 +79,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     private RecyclerView routeRecyclerView;
     private RouteAdapter adapter;
     private RadioButton radioWalk, radioBike;
-    private List<Route> walkRoutes = new ArrayList<>();
-    private List<Route> bikeRoutes = new ArrayList<>();
+    private List<CourseDto> walkRoutes = new ArrayList<>();
+    private List<CourseDto> bikeRoutes = new ArrayList<>();
     private FusedLocationProviderClient fusedClient;
     private LocationCallback walkCallback;
     private boolean autoNavCameraEnabled = true;          // 자동 카메라 on/off
@@ -135,7 +133,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                     View centerView = snapHelper.findSnapView(recyclerView.getLayoutManager());
                     if (centerView != null) {
                         int pos = recyclerView.getLayoutManager().getPosition(centerView);
-                        Route route = adapter.getCurrentList().get(pos);
+                        CourseDto route = adapter.getCurrentList().get(pos);
                         viewModel.setSelectedRoute(route);
                         // GENERAL 모드에서 슬라이드 변경 시 routeInfoLayout은 자동 GONE 유지
                     }
@@ -229,7 +227,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             if (remainingPolyline != null) { remainingPolyline.remove(); remainingPolyline = null; }
             if (deviationPolyline != null) { deviationPolyline.remove(); deviationPolyline = null; }
             stopWalkingLocationUpdates();
-            if (map != null) map.setPadding(0, 0, 0, 0);
+            //if (map != null) map.setPadding(0, 0, 0, 0);
             navPaddingApplied = false;
         } else if (currentState == State.WALKING) {
             routeInfoLayout.setVisibility(View.VISIBLE);
@@ -260,7 +258,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
                 public void onLocationResult(@NonNull LocationResult result) {
                     if (result.getLastLocation() == null) return;
 
-                    Route route = viewModel.getSelectedRoute().getValue();
+                    CourseDto route = viewModel.getSelectedRoute().getValue();
                     if (route == null) return;
 
                     double lat = result.getLastLocation().getLatitude();
@@ -414,7 +412,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         });
     }
 
-    private void updateRemainingPathOnMap(@NonNull Route route, @NonNull RouteMatcher.Result match) {
+    private void updateRemainingPathOnMap(@NonNull CourseDto route, @NonNull RouteMatcher.Result match) {
         if (map == null) return;
 
         clearFullRoute();
@@ -480,7 +478,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             int h = requireView().getHeight();
             // 유저를 화면 아래쪽으로 내리기 위해 "상단 패딩"을 크게 준다.
             // 예) 상단 40%, 하단은 정보패널 높이(없으면 16dp)
-            mapTopPaddingPx = (int) (h * 0.40f);
+            mapTopPaddingPx = dp(170);
             mapBottomPaddingPx = dp(16);
             navPaddingApplied = false; // 상태 전환 시 한 번만 setPadding 하도록 플래그
             applyNavPaddingIfNeeded(); // WALKING일 때 적용됨
@@ -489,22 +487,22 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         viewModel.getAllRoutes().observe(getViewLifecycleOwner(), routes -> {
             walkRoutes.clear();
             bikeRoutes.clear();
-            for (Route r : routes) {
-                if ("walk".equalsIgnoreCase(r.type)) {
+            for (CourseDto r : routes) {
+                if ("walk".equalsIgnoreCase(r.getType())) {
                     walkRoutes.add(r);
-                } else if ("bike".equalsIgnoreCase(r.type)) {
+                } else if ("bike".equalsIgnoreCase(r.getType())) {
                     bikeRoutes.add(r);
                 } else {
-                    Log.w(TAG, "Unknown type for route: " + r.title + " -> " + r.type);
+                    Log.w(TAG, "Unknown type for route: " + r.getTitle() + " -> " + r.getType());
                 }
             }
             Log.d(TAG, "getAllRoutes: walk=" + walkRoutes.size() + ", bike=" + bikeRoutes.size());
         });
 
         // 1. observe 전에 현재 값이 있는지 먼저 체크
-        Route selected = viewModel.getSelectedRoute().getValue();
+        CourseDto selected = viewModel.getSelectedRoute().getValue();
         if (selected != null) {
-            Log.d(TAG, "onMapReady: selectedRoute exists on init = " + selected.title);
+            Log.d(TAG, "onMapReady: selectedRoute exists on init = " + selected.getTitle());
             drawRouteOnMap(selected);
             enableMyLocation(false);
             moveCameraToRoute(selected);
@@ -514,7 +512,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         }
 
         viewModel.getSelectedRoute().observe(getViewLifecycleOwner(), route -> {
-            Log.d(TAG, "selectedRoute.observe: currentState = " + currentState + ", route = " + (route != null ? route.title : "null"));
+            Log.d(TAG, "selectedRoute.observe: currentState = " + currentState + ", route = " + (route != null ? route.getTitle() : "null"));
             if (route == null) return;
 
             if (currentState == State.WALKING) {
@@ -527,7 +525,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         });
 
         map.setOnMarkerClickListener(marker -> {
-            POI poi = (POI) marker.getTag();
+            PoiDto poi = (PoiDto) marker.getTag();
             if (poi != null) {
                 POIDetailFragment.newInstance(poi).show(getParentFragmentManager(), "poi_detail");
                 showPOIDetail(poi);
@@ -555,7 +553,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
      *  - zoom: 유저↔앞포인트 거리를 화면 높이의 60% 정도에 맞춤
      *  - padding: 상단 큰 패딩으로 유저를 화면 아래로 내림
      */
-    private void updateNavCamera(Route route, RouteMatcher.Result match, double currLat, double currLng) {
+    private void updateNavCamera(CourseDto route, RouteMatcher.Result match, double currLat, double currLng) {
         if (map == null) return;
         applyNavPaddingIfNeeded(); // 패딩이 아직이면 적용
 
@@ -632,7 +630,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
     /** 경로상 현재 위치(match)에서 앞쪽으로 aheadMeters만큼 진행한 좌표(UTurn 예외 처리) */
     @Nullable
-    private LatLng computeAheadPoint(Route route, RouteMatcher.Result match, double aheadMeters, double uTurnThresholdDeg) {
+    private LatLng computeAheadPoint(CourseDto route, RouteMatcher.Result match, double aheadMeters, double uTurnThresholdDeg) {
         List<Point> path = route.getPath();
         if (path == null || path.size() < 2) return null;
 
@@ -715,12 +713,12 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void updateRouteInfo() {
-        Route route = viewModel.getSelectedRoute().getValue();
-        Log.d(TAG, "updateRouteInfo: called. route = " + (route != null ? route.title : "null"));
+        CourseDto route = viewModel.getSelectedRoute().getValue();
+        Log.d(TAG, "updateRouteInfo: called. route = " + (route != null ? route.getTitle() : "null"));
         if (route != null) {
-            textRouteTitle.setText(route.title);
-            textRouteDistTime.setText("약 " + route.dist_km + "km · " + route.time + "분");
-            textRemainingDistance.setText("남은 거리 " + route.dist_km + "Km");
+            textRouteTitle.setText(route.getTitle());
+            textRouteDistTime.setText("약 " + route.getDist_km() + "km · " + route.getTime() + "분");
+            textRemainingDistance.setText("남은 거리 " + route.getDist_km() + "Km");
         }
     }
 
@@ -745,7 +743,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
     }
 
 
-    private void drawRouteOnMap(Route route) {
+    private void drawRouteOnMap(CourseDto route) {
         if (map == null || route == null) return;
         map.clear();
         if (currentState != State.WALKING){
@@ -759,18 +757,18 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
             fullRoutePolyline = map.addPolyline(polylineOptions);
         }
 
-        Map<Integer, POI> poiMap = viewModel.getPoiMap().getValue();
+        Map<Integer, PoiDto> poiMap = viewModel.getPoiMap().getValue();
         if (poiMap == null) return;
 
         // poi marker 추가하는 부분
-        if(true) return;
+        //if(true) return;
         for (int poiId : route.getPoi()) {
-            POI poi = poiMap.get(poiId);
+            PoiDto poi = poiMap.get(poiId);
             if (poi != null) {
                 Marker marker = map.addMarker(new MarkerOptions()
-                        .position(new LatLng(poi.point.lat, poi.point.lng))
-                        .title(poi.name)
-                        .snippet(poi.explanation)
+                        .position(new LatLng(poi.getPoint().lat, poi.getPoint().lng))
+                        .title(poi.getName())
+                        .snippet(poi.getExplanation())
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
                 );
                 if (marker != null) marker.setTag(poi);
@@ -778,7 +776,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
-    private void moveCameraToRoute(Route route) {
+    private void moveCameraToRoute(CourseDto route) {
         List<Point> path = route.getPath();
         if (path == null || path.isEmpty() || map == null) return;
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
@@ -867,7 +865,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
-    private void showPOIDetail(POI poi) {
+    private void showPOIDetail(PoiDto poi) {
         // TODO: 상세정보 UI 연결
     }
 

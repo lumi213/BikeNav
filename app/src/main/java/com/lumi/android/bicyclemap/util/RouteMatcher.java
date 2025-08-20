@@ -4,7 +4,7 @@ import androidx.annotation.Nullable;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.lumi.android.bicyclemap.Point;
-import com.lumi.android.bicyclemap.Route;
+import com.lumi.android.bicyclemap.api.dto.CourseDto;
 
 import java.util.List;
 
@@ -58,7 +58,7 @@ public final class RouteMatcher {
      * @return 계산 결과, path가 비정상이면 null
      */
     @Nullable
-    public static Result match(Route route, double currLat, double currLng) {
+    public static Result match(CourseDto route, double currLat, double currLng) {
         if (route == null) return null;
         List<Point> path = route.getPath();
         if (path == null || path.size() < 2) return null;

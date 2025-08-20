@@ -3,6 +3,7 @@ package com.lumi.android.bicyclemap.repository;
 import android.content.Context;
 
 import com.lumi.android.bicyclemap.api.ApiManager;
+import com.lumi.android.bicyclemap.api.dto.ApiResponse;
 import com.lumi.android.bicyclemap.api.dto.AuthResponse;
 
 public class AuthRepository {
@@ -28,10 +29,10 @@ public class AuthRepository {
         });
     }
 
-    public void register(String name, String password, String email, RepositoryCallback<com.lumi.android.bicyclemap.api.dto.ApiResponse> callback) {
-        apiManager.register(name, password, email, new ApiManager.ApiCallback<com.lumi.android.bicyclemap.api.dto.ApiResponse>() {
+    public void register(String name, String password, String email, RepositoryCallback<ApiResponse> callback) {
+        apiManager.register(name, password, email, new ApiManager.ApiCallback<ApiResponse>() {
             @Override
-            public void onSuccess(com.lumi.android.bicyclemap.api.dto.ApiResponse response) {
+            public void onSuccess(ApiResponse response) {
                 callback.onSuccess(response);
             }
 

@@ -7,7 +7,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
-import com.lumi.android.bicyclemap.POI;
+import com.lumi.android.bicyclemap.api.dto.PoiDto;
 import com.lumi.android.bicyclemap.api.dto.PoiListResponse;
 import com.lumi.android.bicyclemap.repository.PoiRepository;
 
@@ -20,7 +20,7 @@ public class SettingViewModel extends ViewModel {
 
     // 기존: 선택된 POI ID 관리용
     private final MutableLiveData<List<String>> selectedPoiIds = new MutableLiveData<>(new ArrayList<>());
-    private final MutableLiveData<Map<String, POI>> poiMap = new MutableLiveData<>(new HashMap<>());
+    private final MutableLiveData<Map<String, PoiDto>> poiMap = new MutableLiveData<>(new HashMap<>());
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
     
@@ -81,7 +81,7 @@ public class SettingViewModel extends ViewModel {
     }
 
     // 추가: POI 리스트를 직접 관리하는 LiveData
-    private final MutableLiveData<List<POI>> poiList = new MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<List<PoiDto>> poiList = new MutableLiveData<>(new ArrayList<>());
 
     // 선택된 POI ID 목록
     public void setSelectedPoiIds(List<String> ids) {
@@ -91,12 +91,12 @@ public class SettingViewModel extends ViewModel {
     }
 
     // 전체 POI Map 설정
-    public void setPoiMap(Map<String, POI> map) {
+    public void setPoiMap(Map<String, PoiDto> map) {
         poiMap.setValue(map);
     }
 
     // 직접 POI 리스트를 세팅하고 싶을 때 (ex: 1km 필터 POI)
-    public void setPoiList(List<POI> list) {
+    public void setPoiList(List<PoiDto> list) {
         poiList.setValue(list);
         // poiList가 세팅되면 selectedPoiIds를 비워서 id기반 표시 안하게 한다.
         selectedPoiIds.setValue(new ArrayList<>()); // 혹은 null로 해도 됨
@@ -105,17 +105,17 @@ public class SettingViewModel extends ViewModel {
     // POI 리스트를 반환:
     // - poiList가 비어 있지 않으면 이 값을 반환
     // - 비어 있으면 기존 id기반 변환값 반환
-    public LiveData<List<POI>> getPoiList() {
+    public LiveData<List<PoiDto>> getPoiList() {
         return Transformations.map(poiList, list -> {
             if (list != null && !list.isEmpty()) {
                 return list;
             } else {
-                Map<String, POI> map = poiMap.getValue();
+                Map<String, PoiDto> map = poiMap.getValue();
                 List<String> ids = selectedPoiIds.getValue();
-                List<POI> result = new ArrayList<>();
+                List<PoiDto> result = new ArrayList<>();
                 if (map == null || ids == null || ids.isEmpty()) return result;
                 for (String id : ids) {
-                    POI poi = map.get(id);
+                    PoiDto poi = map.get(id);
                     if (poi != null) result.add(poi);
                 }
                 return result;

@@ -27,6 +27,8 @@ import com.lumi.android.bicyclemap.api.dto.CourseListResponse;
 import com.lumi.android.bicyclemap.api.dto.PoiDto;
 import com.lumi.android.bicyclemap.api.dto.PoiListResponse;
 import com.lumi.android.bicyclemap.api.dto.ReviewRequest;
+import com.lumi.android.bicyclemap.api.dto.VillagesDto;
+import com.lumi.android.bicyclemap.api.dto.VillagesListResponse;
 import com.lumi.android.bicyclemap.repository.AuthRepository;
 import com.lumi.android.bicyclemap.repository.CourseRepository;
 import com.lumi.android.bicyclemap.repository.ReviewRepository;
@@ -77,19 +79,19 @@ public class MainActivity extends AppCompatActivity {
         // 로컬 데이터 로드 (API 실패시 대체용)
         Executors.newSingleThreadExecutor().execute(() -> {
             Map<Integer, List<Integer>> coursePoiMap = readCoursePoiMap();
-            List<Route> routes = loadRoutes(coursePoiMap); // 동기
-            Map<Integer, POI> poiMap = loadPoi();
+            List<CourseDto> routes = loadRoutes(coursePoiMap); // 동기
+            Map<Integer, PoiDto> poiMap = loadPoi();
             // 전체 데이터 로그로 확인
-            for (Route r : routes) {
+            for (CourseDto r : routes) {
                 Log.d("ROUTE_CHECK",
-                        "ID=" + r.id +
-                                ", title=" + r.title +
-                                ", dist=" + r.dist_km +
-                                ", time=" + r.time +
-                                ", diff=" + r.diff +
-                                ", type=" + r.type +
+                        "ID=" + r.getCourse_id() +
+                                ", title=" + r.getTitle() +
+                                ", dist=" + r.getDist_km() +
+                                ", time=" + r.getTime() +
+                                ", diff=" + r.getDiff() +
+                                ", type=" + r.getType() +
                                 ", poi=" + r.poi +
-                                ", path size=" + (r.path != null ? r.path.size() : 0)
+                                ", path size=" + (r.getPath() != null ? r.getPath().size() : 0)
                 );
             }
             runOnUiThread(() -> {
@@ -128,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
         // MapState 를 사용 중이면 그것을 관찰
         viewModel.getMapState().observe(this, state -> {
             if (state == MainViewModel.MapState.WALKING) {
-                Route sel = viewModel.getSelectedRoute().getValue();
+                CourseDto sel = viewModel.getSelectedRoute().getValue();
                 RouteHolder.set(sel);
                 startTrackingService();
             } else {
@@ -212,12 +214,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * 서버에서 코스 목록을 받아와 Route 리스트로 반환한다.
-     * - /api/course/list (GET)
      * - 주의: 동기 호출(execute)이라서 반드시 백그라운드 스레드에서 호출하세요.
      */
-    private List<Route> loadRoutes(Map<Integer, List<Integer>> coursePoiMap) {
-        List<Route> routes = new ArrayList<>();
+    private List<CourseDto> loadRoutes(Map<Integer, List<Integer>> coursePoiMap) {
+        List<CourseDto> routes = new ArrayList<>();
 
         ApiService api = ApiClient.getInstance(this).getApiService();
 
@@ -236,11 +236,9 @@ public class MainActivity extends AppCompatActivity {
 
         // 3) 각 코스에 대해 상세 동기 호출 → path 등 채움
         for (CourseDto dto : listBody.getData()) {
-            // 기본 필드 매핑
-            Route r = mapListDtoToRoute(dto);
 
             // poi id 주입
-            r.poi = coursePoiMap.getOrDefault(dto.getCourse_id(), new ArrayList<>());
+            dto.poi = coursePoiMap.getOrDefault(dto.getCourse_id(), new ArrayList<>());
 
             // 상세 호출 (path / description / images / tags 등)
             try {
@@ -250,13 +248,6 @@ public class MainActivity extends AppCompatActivity {
                         && detailResp.body() != null
                         && detailResp.body().isSuccess()
                         && detailResp.body().getData() != null) {
-
-                    CourseDto detail = detailResp.body().getData();
-
-                    // path 채우기
-                    if (detail.getPath() != null && !detail.getPath().isEmpty()) {
-                        r.path = toPoints(detail.getPath());
-                    }
                 } else {
                     // 상세 실패 시: path 비어있을 수 있음(로그만)
                     Log.w("ROUTE_DETAIL", "detail fail id=" + dto.getCourse_id());
@@ -264,31 +255,15 @@ public class MainActivity extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-            routes.add(r);
+            routes.add(dto);
         }
-
         return routes;
     }
 
-    // 목록 DTO → Route 기본 매핑
-    private Route mapListDtoToRoute(CourseDto dto) {
-        Route r = new Route();
-        r.id = dto.getCourse_id();
-        r.title = dto.getTitle();
-        r.dist_km = dto.getDist_km();
-        r.time = dto.getTime();
-        r.image = dto.getImage();   // thumbnail_url → image 변경 반영
-        r.diff = dto.getDiff();
-        r.type = dto.getType();     // "walk" | "bike"
-        // 목록 응답에 path가 있을 수도 있지만, 정확성을 위해 상세에서 다시 세팅
-        return r;
-    }
-
     // 상세 path [{lat,lng}, ...] → List<Point>
-    private List<Point> toPoints(List<CourseDto.PointDto> path) {
+    private List<Point> toPoints(List<Point> path) {
         List<Point> out = new ArrayList<>();
-        for (CourseDto.PointDto p : path) {
+        for (Point p : path) {
             out.add(new Point(p.getLat(), p.getLng()));
         }
         return out;
@@ -337,8 +312,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // MainThread에서 호출하지 말 것 (execute() 사용)
-    private Map<Integer, POI> loadPoi() {
-        Map<Integer, POI> result = new HashMap<>();
+    private Map<Integer, PoiDto> loadPoi() {
+        Map<Integer, PoiDto> result = new HashMap<>();
         Set<Integer> fetched = new HashSet<>(); // 상세 중복 호출 방지
 
         try {
@@ -370,17 +345,17 @@ public class MainActivity extends AppCompatActivity {
                     for (PoiDto d : poiResp.body().getData().getPois()) {
                         int pid = d.getId();
 
-                        // 기존/중복 POI 객체 재사용
-                        POI poi = result.getOrDefault(pid, new POI());
-                        poi.id = pid;
-                        poi.name = d.getName();
-                        poi.type = d.getType(); // "biz" | "util" | "tourist"
+                        // 기존/중복 POI 객체 재사용 (전부 PoiDto로만 보관)
+                        PoiDto poi = result.getOrDefault(pid, new PoiDto());
+                        // 기본 필드 채우기
+                        poi.setId(pid);
+                        poi.setName(d.getName());
+                        poi.setType(d.getType()); // "biz" | "util" | "tourist"
 
-                        // 좌표
                         if (d.getPoint() != null) {
-                            poi.point = new Point(d.getPoint().getLat(), d.getPoint().getLng());
+                            poi.setPoint(new Point(d.getPoint().getLat(), d.getPoint().getLng()));
                         }
-                        poi.explanation = d.getExplanation();
+                        poi.setExplanation(d.getExplanation());
 
                         // ===== 상세 정보 (한 번만 호출) =====
                         if (!fetched.contains(pid)) {
@@ -395,33 +370,28 @@ public class MainActivity extends AppCompatActivity {
 
                                     PoiDto detail = detailResp.body().getData();
 
-                                    poi.addr = detail.getAddr();
-                                    poi.hour = parseHours(detail.getHour()); // 보기 좋게 정리
-                                    poi.rate = detail.getRate();
-                                    poi.tel  = detail.getTel();
+                                    // 상세 필드 덮어쓰기/보강
+                                    poi.setAddr(detail.getAddr());
+                                    poi.setHour(parseHours(detail.getHour())); // 보기 좋게 정리
+                                    poi.setRate(detail.getRate());
+                                    poi.setTel(detail.getTel());
 
-                                    // tag 문자열 -> List<String> + menu(조합 문자열)
-                                    List<String> tags = parseTags(detail.getTag());
-                                    poi.tags.clear();
-                                    poi.tags.addAll(tags);
-                                    poi.menu = joinWithDot(tags); // 어댑터 옵션 라인에 사용됨
+                                    // 태그: Gson이 유연 파싱한 tags 사용
+                                    if (detail.getTag() != null) {
+                                        poi.setTags(detail.getTag());
+                                    }
 
-                                    // 이미지: main 우선, 없으면 첫 번째
-                                    poi.imageUrls.clear();
-                                    String main = null;
+                                    // 이미지: DTO 그대로 유지 (main은 필요 시 계산해서 사용)
                                     if (detail.getImages() != null) {
-                                        for (PoiDto.ImageDto im : detail.getImages()) {
-                                            if (im == null || im.getUrl() == null) continue;
-                                            poi.imageUrls.add(im.getUrl());
-                                            if (im.isIs_main() && main == null) {
-                                                main = im.getUrl();
-                                            }
-                                        }
+                                        poi.setImages(detail.getImages());
                                     }
-                                    if (main == null && !poi.imageUrls.isEmpty()) {
-                                        main = poi.imageUrls.get(0);
+                                    // 서버가 별도 mainImages를 주면 그대로 반영
+                                    if (detail.getMainImages() != null) {
+                                        poi.setMainImages(detail.getMainImages());
                                     }
-                                    poi.mainImageUrl = main;
+
+                                    // 필요 시 아래처럼 계산해서 쓸 수 있음(보관은 안 함)
+                                    // String mainUrl = findMainImageUrl(detail);
                                 }
                             } catch (Exception e) {
                                 e.printStackTrace(); // 개별 실패는 무시
@@ -429,7 +399,12 @@ public class MainActivity extends AppCompatActivity {
                             fetched.add(pid);
                         }
 
-                        // 맵에 반영 (중복 id는 마지막 값으로 덮어씀)
+                        // 필터: 전화번호 없는 항목 제외 (기존 로직 유지)
+                        if (!hasPhone(poi.getTel())) {
+                            continue; // result.put() 하지 않음 → 목록에서 제외
+                        }
+
+                        // 맵에 반영
                         result.put(pid, poi);
                     }
                 }
@@ -438,6 +413,15 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return result;
+    }
+
+    /** tel이 유효한지(숫자 하나 이상 포함) 체크 */
+    private boolean hasPhone(String tel) {
+        if (tel == null) return false;
+        String t = tel.trim();
+        if (t.isEmpty()) return false;
+        // 숫자가 하나라도 있는지 확인 (010-xxxx-xxxx, +82, 공백 포함 등 허용)
+        return t.matches(".*\\d+.*");
     }
 
     /* ================== 보조 파서 ================== */

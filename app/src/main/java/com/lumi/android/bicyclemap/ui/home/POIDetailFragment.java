@@ -1,4 +1,4 @@
-package com.lumi.android.bicyclemap;
+package com.lumi.android.bicyclemap.ui.home;
 
 import android.app.Dialog;
 import android.os.Bundle;
@@ -13,15 +13,17 @@ import androidx.annotation.Nullable;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.lumi.android.bicyclemap.R;
+import com.lumi.android.bicyclemap.api.dto.PoiDto;
 import com.lumi.android.bicyclemap.util.ImageLoader;
 
 public class POIDetailFragment extends BottomSheetDialogFragment {
 
     private static final String ARG_POI = "arg_poi";
-    private POI poi;
+    private PoiDto poi;
 
     /* ───────────────────────── 인스턴스 팩토리 ───────────────────────── */
-    public static POIDetailFragment newInstance(@NonNull POI poi) {
+    public static POIDetailFragment newInstance(@NonNull PoiDto poi) {
         POIDetailFragment f = new POIDetailFragment();
         Bundle args = new Bundle();
         args.putSerializable(ARG_POI, poi);
@@ -39,27 +41,34 @@ public class POIDetailFragment extends BottomSheetDialogFragment {
         View v = inflater.inflate(R.layout.poi_detail, container, false);
 
         if (getArguments() != null) {
-            poi = (POI) getArguments().getSerializable(ARG_POI);
+            poi = (PoiDto) getArguments().getSerializable(ARG_POI);
         }
 
-        TextView name  = v.findViewById(R.id.poi_name);
-        TextView desc  = v.findViewById(R.id.poi_description);
         ImageView img  = v.findViewById(R.id.poi_image);
+        TextView name, desc, addr, hour, tel;
+        name  = v.findViewById(R.id.poi_name);
+        desc  = v.findViewById(R.id.poi_description);
+        addr  = v.findViewById(R.id.poi_addr);
+        hour  = v.findViewById(R.id.poi_hour);
+        tel   = v.findViewById(R.id.poi_tel);
 
         if (poi != null) {
-            name.setText(poi.name);
-            desc.setText(poi.explanation);
+            name.setText(poi.getName());
+            desc.setText(poi.getExplanation());
+            addr.setText(poi.getAddr());
+            hour.setText(poi.getHour());
+            tel.setText(poi.getTel());
 
             /* ─── 이미지 로딩 ─── */
             final int PLACEHOLDER = R.drawable.loading;       // 로딩 중
             final int ERROR_IMG   = R.drawable.sample_image;  // 로딩 실패
             final int NO_URL_IMG  = R.drawable.noimg;         // URL 없음
 
-            if (poi.mainImageUrl != null && !poi.mainImageUrl.trim().isEmpty()) {
+            if (poi.getMainImages().getUrl() != null && !poi.getMainImages().getUrl().trim().isEmpty()) {
                 // http/https URL 또는 data:image;base64 형식 모두 처리
                 ImageLoader.loadFlexible(
                         requireContext(),
-                        poi.mainImageUrl.trim(),
+                        poi.getMainImages().getUrl().trim(),
                         img,
                         PLACEHOLDER      // placeholder & error = loading
                 );

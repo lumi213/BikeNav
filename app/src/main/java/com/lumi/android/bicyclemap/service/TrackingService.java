@@ -7,20 +7,17 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.location.Location;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
-import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.gms.location.*;
 import com.lumi.android.bicyclemap.MainActivity;
-import com.lumi.android.bicyclemap.MainViewModel;
 import com.lumi.android.bicyclemap.R;
-import com.lumi.android.bicyclemap.Route;
+import com.lumi.android.bicyclemap.api.dto.CourseDto;
 import com.lumi.android.bicyclemap.util.RouteMatcher;
 
 import java.util.Locale;
@@ -41,7 +38,7 @@ public class TrackingService extends Service {
 
     private FusedLocationProviderClient fused;
     private LocationCallback callback;
-    private Route route;
+    private CourseDto route;
 
     @Override
     public void onCreate() {
@@ -199,8 +196,8 @@ public class TrackingService extends Service {
         if (route == null) return;
         Intent i = new Intent(ACTION_ARRIVED);
         i.setPackage(getPackageName()); // 앱 내부로만
-        i.putExtra(EXTRA_ROUTE_ID, route.getId());      // Route의 id getter에 맞게 수정
-        i.putExtra(EXTRA_ROUTE_TITLE, route.getName()); // Route의 title getter에 맞게 수정
+        i.putExtra(EXTRA_ROUTE_ID, route.getCourse_id());      // Route의 id getter에 맞게 수정
+        i.putExtra(EXTRA_ROUTE_TITLE, route.getTitle()); // Route의 title getter에 맞게 수정
         sendBroadcast(i);
         updateNotification("도착", "목적지에 도착했습니다");
     }

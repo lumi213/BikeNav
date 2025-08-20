@@ -4,7 +4,8 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/white">
+    android:background="@android:color/white"
+    android:padding="16dp">
 
     <!-- 🔍 검색창 -->
     <EditText
@@ -43,11 +44,11 @@
         android:layout_marginBottom="18dp">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_tour_filter_biz"
+            android:id="@+id/btn_tour_filter_food"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="40dp"
-            android:text="상권"
+            android:text="음식"
             app:iconGravity="textStart"
             app:iconPadding="4dp"
             app:cornerRadius="16dp"
@@ -57,11 +58,11 @@
             />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_tour_filter_util"
+            android:id="@+id/btn_tour_filter_tradition"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="40dp"
-            android:text="편의 시설"
+            android:text="전통"
             app:iconGravity="textStart"
             app:iconPadding="4dp"
             app:cornerRadius="16dp"
@@ -71,11 +72,11 @@
             />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_tour_filter_tourist"
+            android:id="@+id/btn_tour_filter_tourism"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="40dp"
-            android:text="관광지"
+            android:text="관광"
             app:iconGravity="textStart"
             app:iconPadding="4dp"
             app:cornerRadius="16dp"

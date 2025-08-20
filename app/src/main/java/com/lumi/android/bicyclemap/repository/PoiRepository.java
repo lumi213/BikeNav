@@ -3,6 +3,7 @@ package com.lumi.android.bicyclemap.repository;
 import android.content.Context;
 
 import com.lumi.android.bicyclemap.api.ApiManager;
+import com.lumi.android.bicyclemap.api.dto.ApiResponse;
 import com.lumi.android.bicyclemap.api.dto.PoiDto;
 import com.lumi.android.bicyclemap.api.dto.PoiListResponse;
 
@@ -32,9 +33,9 @@ public class PoiRepository {
     }
 
     public void getPoiDetail(int courseId, int placeId, RepositoryCallback<PoiDto> callback) {
-        apiManager.getPoiDetail(courseId, placeId, new ApiManager.ApiCallback<com.lumi.android.bicyclemap.api.dto.ApiResponse<PoiDto>>() {
+        apiManager.getPoiDetail(courseId, placeId, new ApiManager.ApiCallback<ApiResponse<PoiDto>>() {
             @Override
-            public void onSuccess(com.lumi.android.bicyclemap.api.dto.ApiResponse<PoiDto> response) {
+            public void onSuccess(ApiResponse<PoiDto> response) {
                 if (response.getData() != null) {
                     callback.onSuccess(response.getData());
                 } else {

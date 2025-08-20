@@ -1,0 +1,28 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- 바깥 원 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="2"
+        android:pathData="M12,2
+                          A10,10 0 1,1 11.999,2Z" />
+
+    <!-- 안쪽 별 -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M12,6
+                          L13.5,10.5
+                          L18,10.5
+                          L14.25,13.5
+                          L15.5,18
+                          L12,15.5
+                          L8.5,18
+                          L9.75,13.5
+                          L6,10.5
+                          L10.5,10.5Z" />
+</vector>

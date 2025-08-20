@@ -1,7 +1,6 @@
-package com.lumi.android.bicyclemap;
+package com.lumi.android.bicyclemap.ui.surrounding;
 
 import android.net.Uri;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,9 +14,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.google.android.gms.actions.ItemListIntents;
+import com.lumi.android.bicyclemap.R;
+import com.lumi.android.bicyclemap.api.dto.PoiDto;
 
-public class POIAdapter extends ListAdapter<POI, POIAdapter.POIViewHolder> {
+public class POIAdapter extends ListAdapter<PoiDto, POIAdapter.POIViewHolder> {
 
     public POIAdapter() { super(DIFF_CALLBACK); }
 
@@ -33,26 +33,34 @@ public class POIAdapter extends ListAdapter<POI, POIAdapter.POIViewHolder> {
     /* ───────────────────────── 데이터 바인딩 ───────────────────────── */
     @Override
     public void onBindViewHolder(@NonNull POIViewHolder h, int pos) {
-        POI p = getItem(pos);
+        PoiDto p = getItem(pos);
+        if (p == null) {
+            h.name.setText("");
+            h.rating.setText("0");
+            h.category.setText("");
+            h.time.setText("");
+            h.tel.setText("");
+            h.option.setText("");
+            h.image.setImageResource(R.drawable.noimg);
+            return;
+        }
 
-        // 텍스트
-        h.name.setText(p.name);
-        h.rating.setText(p.rate > 0 ? String.format("%.1f", p.rate) : "0");
+        // 텍스트들 NPE 방어
+        h.name.setText(p.getName() != null ? p.getName() : "");
+        h.rating.setText(p.getRate() > 0 ? String.format("%.1f", p.getRate()) : "0");
         h.category.setText(categoryToKor(p));
-        h.time.setText(makeHourString(p.hour));
-        h.tel.setText(p.tel);
+        h.time.setText(p.getHour() != null ? p.getHour() : "");
+        h.tel.setText(p.getTel() != null ? p.getTel() : "");
         h.option.setText(makeOptionString(p));
 
-        // 이미지
+        // 이미지 (null-safe, 다단계 폴백)
         final int PLACEHOLDER = R.drawable.loading;
         final int ERROR_IMG   = R.drawable.sample_image;
         final int NO_URL_IMG  = R.drawable.noimg;
 
-        String img = p.getImage(); // ★ POI.getImage() == mainImageUrl
-        if (img != null && !img.trim().isEmpty()) {
-            String src = img.trim();
-            Object glideSrc = src.startsWith("data:image") ? Uri.parse(src) : src;
-
+        String imageUrl = findMainImageUrl(p);
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            Object glideSrc = imageUrl.startsWith("data:image") ? Uri.parse(imageUrl) : imageUrl;
             Glide.with(h.image.getContext())
                     .load(glideSrc)
                     .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
@@ -64,16 +72,38 @@ public class POIAdapter extends ListAdapter<POI, POIAdapter.POIViewHolder> {
             h.image.setImageResource(NO_URL_IMG);
         }
     }
+    /** 대표 이미지 URL 안전 추출: mainImages → images(is_main) → images 첫 URL */
+    private String findMainImageUrl(PoiDto d) {
+        if (d == null) return null;
+
+        PoiDto.ImageDto main = d.getMainImages();
+        if (main != null && main.getUrl() != null && !main.getUrl().isEmpty()) {
+            return main.getUrl();
+        }
+
+        if (d.getImages() != null) {
+            String first = null;
+            for (PoiDto.ImageDto im : d.getImages()) {
+                if (im == null) continue;
+                String url = im.getUrl();
+                if (url == null || url.isEmpty()) continue;
+                if (first == null) first = url;
+                if (im.isIs_main()) return url;
+            }
+            return first;
+        }
+        return null;
+    }
 
     /* ───────────────────────── DIFF_CALLBACK ───────────────────────── */
-    public static final DiffUtil.ItemCallback<POI> DIFF_CALLBACK =
-            new DiffUtil.ItemCallback<POI>() {
+    public static final DiffUtil.ItemCallback<PoiDto> DIFF_CALLBACK =
+            new DiffUtil.ItemCallback<PoiDto>() {
                 @Override
-                public boolean areItemsTheSame(@NonNull POI o,@NonNull POI n){
-                    return o.id == n.id;
+                public boolean areItemsTheSame(@NonNull PoiDto o,@NonNull PoiDto n){
+                    return o.getId() == n.getId();
                 }
                 @Override
-                public boolean areContentsTheSame(@NonNull POI o,@NonNull POI n){
+                public boolean areContentsTheSame(@NonNull PoiDto o,@NonNull PoiDto n){
                     return o.equals(n);
                 }
             };
@@ -95,12 +125,12 @@ public class POIAdapter extends ListAdapter<POI, POIAdapter.POIViewHolder> {
     }
 
     /* ───────────────────────── 유틸 함수 ───────────────────────── */
-    private static String categoryToKor(POI p){
+    private static String categoryToKor(PoiDto p){
         StringBuilder sb = new StringBuilder();
-        if("biz".equalsIgnoreCase(p.type)) sb.append("상권") ;
-        if("util".equalsIgnoreCase(p.type)) sb.append("편의시설");
-        if("tourist".equalsIgnoreCase(p.type)) sb.append("관광지");
-        if (p.tags != null && !p.tags.isEmpty()) sb.append(" * "+p.tags.get(0));
+        if("biz".equalsIgnoreCase(p.getType())) sb.append("상권") ;
+        if("util".equalsIgnoreCase(p.getType())) sb.append("편의시설");
+        if("tourist".equalsIgnoreCase(p.getType())) sb.append("관광지");
+        if (p.getTag() != null && !p.getTag().isEmpty()) sb.append(" * "+p.getTag().get(0));
         return sb.toString();
     }
 
@@ -108,9 +138,9 @@ public class POIAdapter extends ListAdapter<POI, POIAdapter.POIViewHolder> {
         return s;
     }
 
-    private static String makeOptionString(POI p){
+    private static String makeOptionString(PoiDto p){
         StringBuilder sb = new StringBuilder();
-        if (p.menu != null && !p.menu.isEmpty()) sb.append(p.menu);
+        //if (p.menu != null && !p.menu.isEmpty()) sb.append(p.menu);
         return sb.toString();
     }
 }
