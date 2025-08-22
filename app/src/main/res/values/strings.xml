@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Bicycle Map</string>
+    <string name="app_name">평창 로드</string>
     <string name="title_tour">관광</string>
     <string name="title_surrounding">주변</string>
     <string name="title_maps">지도</string>

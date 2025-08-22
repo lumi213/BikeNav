@@ -14,8 +14,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import com.lumi.android.bicyclemap.R;
 import com.lumi.android.bicyclemap.api.dto.PoiDto;
+
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class POIAdapter extends ListAdapter<PoiDto, POIAdapter.POIViewHolder> {
 
@@ -125,12 +135,53 @@ public class POIAdapter extends ListAdapter<PoiDto, POIAdapter.POIViewHolder> {
     }
 
     /* ───────────────────────── 유틸 함수 ───────────────────────── */
-    private static String categoryToKor(PoiDto p){
+    private static String categoryToKor(PoiDto p) {
         StringBuilder sb = new StringBuilder();
-        if("biz".equalsIgnoreCase(p.getType())) sb.append("상권") ;
-        if("util".equalsIgnoreCase(p.getType())) sb.append("편의시설");
-        if("tourist".equalsIgnoreCase(p.getType())) sb.append("관광지");
-        if (p.getTag() != null && !p.getTag().isEmpty()) sb.append(" * "+p.getTag().get(0));
+
+        if ("biz".equalsIgnoreCase(p.getType())) sb.append("상권");
+        if ("util".equalsIgnoreCase(p.getType())) sb.append("편의시설");
+        if ("tourist".equalsIgnoreCase(p.getType())) sb.append("관광지");
+
+        // ----- tag1("식당") 추출 -----
+        String tag1Value = null;
+        List<String> tags = p.getTag();
+
+        if (tags != null && !tags.isEmpty()) {
+            // 1) 리스트 안의 문자열 중 JSON 객체처럼 보이는 항목에서 "tag1" 뽑기
+            for (String t : tags) {
+                if (t == null) continue;
+                String s = t.trim();
+                if (s.startsWith("{") && s.endsWith("}")) {
+                    try {
+                        JsonObject obj = JsonParser.parseString(s).getAsJsonObject();
+                        if (obj.has("tag1")) {
+                            tag1Value = obj.get("tag1").getAsString(); // <-- "식당"
+                            break;
+                        }
+                    } catch (Exception ignore) { /* 무시하고 다음 후보 검사 */ }
+                }
+            }
+
+            // 2) JSON이 아니면(평문 리스트라면) 첫 값으로 폴백
+            if (tag1Value == null) {
+                // 만약 "tag1":"식당" 같은 문자열이 들어오는 경우를 대비한 정규식 처리
+                Pattern TAG1 = Pattern.compile("\"tag1\"\\s*:\\s*\"([^\"]+)\"");
+                for (String t : tags) {
+                    if (t == null) continue;
+                    Matcher m = TAG1.matcher(t);
+                    if (m.find()) { tag1Value = m.group(1); break; }
+                }
+            }
+            if (tag1Value == null) {
+                // 정말로 평문 태그 리스트라면 첫 항목 사용
+                tag1Value = tags.get(0);
+            }
+        }
+
+        if (tag1Value != null && !tag1Value.isEmpty()) {
+            sb.append(" * ").append(tag1Value);
+        }
+
         return sb.toString();
     }
 

@@ -1,5 +1,6 @@
 package com.lumi.android.bicyclemap.ui.home;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,19 +49,18 @@ public class RouteAdapter extends ListAdapter<CourseDto, RouteAdapter.ViewHolder
         holder.info.setText("약 " + route.getDist_km() + "km · " + route.getTime() + "분");
 
         boolean isBike = "bike".equalsIgnoreCase(route.getType() == null ? "" : route.getType().trim());
-        // 카테고리별 기본 이미지 결정
-        int fallbackResId = isBike          // ← Route 모델에 boolean isBike 필드(또는 비슷한 구분값)가 있다고 가정
-                ? R.drawable.bike_route
-                : R.drawable.walk_route;
 
         // URL → ImageView (비어 있거나 실패 시 fallback 사용)
         String imgUrl = route.getImage();              // 서버에서 받은 절대 URL (null/"" 일 수 있음)
 
+        int categoryFallback = isBike ? R.drawable.bike_route : R.drawable.walk_route;
+        int localResId = resolveCourseImage(holder.itemView.getContext(), route, categoryFallback);
+
         if (imgUrl == null || imgUrl.trim().isEmpty()) {
             // URL이 없으면 즉시 기본 이미지 표시
-            holder.image.setImageResource(fallbackResId);
+            holder.image.setImageResource(localResId);
         } else {
-            ImageLoader.load(holder.image.getContext(), imgUrl, holder.image, fallbackResId);
+            ImageLoader.load(holder.image.getContext(), imgUrl, holder.image, localResId);
         }
 
         holder.itemView.setOnClickListener(v -> {
@@ -87,6 +87,21 @@ public class RouteAdapter extends ListAdapter<CourseDto, RouteAdapter.ViewHolder
             }
             if (listener != null) listener.onRouteClick(route, position);
         });
+    }
+
+    /** 코스ID로 drawable 리소스가 있으면 반환, 없으면 categoryFallback 반환 */
+    private int resolveCourseImage(Context ctx, CourseDto route, int categoryFallback) {
+        // ⚠️ drawable 파일 이름은 'route_<id>.png' 형태로 넣어주세요 (예: route_201.png)
+        // 코스 ID 접근자 이름은 프로젝트에 맞춰 아래 중 하나를 쓰세요.
+        // Integer id = route.getId(); // 또는
+        Integer id = route.getCourse_id(); // ← 이게 없다면 위 라인으로 교체
+
+        if (id != null) {
+            String name = "l" + id; // res/drawable/route_201.png
+            int resId = ctx.getResources().getIdentifier(name, "drawable", ctx.getPackageName());
+            if (resId != 0) return resId;
+        }
+        return categoryFallback;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

@@ -1,5 +1,6 @@
 package com.lumi.android.bicyclemap.ui.course;
 
+import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -88,10 +89,14 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
 
         if (route != null) {
 
-            /* ───── 이미지 로딩 ───── */
-            final int PLACEHOLDER = R.drawable.loading;        // 로딩 중
-            final int ERROR_IMG   = R.drawable.sample_image;   // 실패
-            final int NO_URL_IMG  = R.drawable.noimg;          // URL 없음
+
+            /* ───── 이미지 로딩 변경 ───── */
+            final int PLACEHOLDER = R.drawable.loading;       // 로딩 중
+            final int ERROR_IMG   = R.drawable.sample_image;  // 로딩 실패
+            final int NO_URL_IMG  = R.drawable.noimg;         // URL 없음
+
+            // resolveCourseImage로 대체 리소스 탐색
+            int localResId = resolveCourseImage(image.getContext(), route, NO_URL_IMG);
 
             if (route.getImage() != null && !route.getImage().trim().isEmpty()) {
                 String src = route.getImage().trim();
@@ -101,11 +106,12 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
                         .load(glideSrc)
                         .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                         .placeholder(PLACEHOLDER)
-                        .error(ERROR_IMG)
+                        .error(localResId)   // 💡 실패 시 로컬 이미지 (있으면) 사용
                         .centerCrop()
                         .into(image);
             } else {
-                image.setImageResource(NO_URL_IMG);
+                // URL 없음 → 로컬 이미지 있으면 사용, 없으면 noimg
+                image.setImageResource(localResId);
             }
             /* ─────────────────────── */
 
@@ -142,15 +148,6 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
                 for (String p : route.getNearby_businesses()) sb.append("• ").append(p).append('\n');
                 surrounding.setText(sb.toString());
             }
-            //Map<Integer, POI> poiMap = viewModel.getPoiMap().getValue();
-            //if (route.poi != null && poiMap != null) {
-            //    StringBuilder sb = new StringBuilder();
-            //    for (int id : route.poi) {
-            //        POI poi = poiMap.get(id);
-            //        if (poi != null) sb.append("• ").append(poi.name).append('\n');
-            //    }
-            //    surrounding.setText(sb.toString());
-            //}
         }
 
         /* ─── 버튼: 코스 시작 ─── */
@@ -248,6 +245,21 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
             map.animateCamera(cu);
         }
 
+    }
+
+    /** 코스ID로 drawable 리소스가 있으면 반환, 없으면 categoryFallback 반환 */
+    private int resolveCourseImage(Context ctx, CourseDto route, int categoryFallback) {
+        // ⚠️ drawable 파일 이름은 'route_<id>.png' 형태로 넣어주세요 (예: route_201.png)
+        // 코스 ID 접근자 이름은 프로젝트에 맞춰 아래 중 하나를 쓰세요.
+        // Integer id = route.getId(); // 또는
+        Integer id = route.getCourse_id(); // ← 이게 없다면 위 라인으로 교체
+
+        if (id != null) {
+            String name = "l" + id; // res/drawable/route_201.png
+            int resId = ctx.getResources().getIdentifier(name, "drawable", ctx.getPackageName());
+            if (resId != 0) return resId;
+        }
+        return categoryFallback;
     }
 
     private int dp(int v) {

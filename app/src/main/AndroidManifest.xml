@@ -34,6 +34,9 @@
         <meta-data
             android:name="kakaoAPI_KEY"
             android:value="@string/kakao_rest_api_key" />
+        <meta-data
+            android:name="com.lumi.openai.API_KEY"
+            android:value="@string/openai_api_key"/>
 
         <activity
             android:name=".MainActivity"

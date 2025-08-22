@@ -10,6 +10,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class ApiClient {
     private static final String BASE_URL = "http://lumi.pe.kr:12345/";
     private static final String TEST_URL = "http://10.0.2.2:8080/"; // 로컬 서버 주소
+    private static final String USB_URL = "http://127.0.0.1:8080/";
+    private static final String WIFI_URL = "http://0.0.0.0:8080/";
+    private static final String HOT_URL = "http://192.168.188.62:8080/";
     private static ApiClient instance;
     private Retrofit retrofit;
     private ApiService apiService;

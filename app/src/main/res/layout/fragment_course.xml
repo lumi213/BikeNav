@@ -35,14 +35,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             style="@style/Widget.MaterialComponents.Chip.Choice"
-            android:text="북한산" />
+            android:text="땀띠공원" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chip_village"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             style="@style/Widget.MaterialComponents.Chip.Choice"
-            android:text="한옥마을" />
+            android:text="계곡" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chip_view"

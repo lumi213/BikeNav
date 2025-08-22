@@ -19,8 +19,9 @@
         android:paddingStart="20dp"
         android:paddingEnd="20dp"/>
 
-    <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
+    <!-- ...생략 (상단 동일) ... -->
+
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true">
@@ -30,73 +31,98 @@
             android:layout_height="wrap_content"
             android:padding="16dp">
 
-            <!-- 헤더: 아바타, 이메일, 이름 -->
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/imgAvatar"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:src="@drawable/ic_avatar"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <TextView
-                android:id="@+id/txtEmail"
+            <!-- ✅ 프로필 섹션 전체를 감싸는 컨테이너 -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/sectionProfile"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:text="123456789@gmail.com"
-                android:textColor="@color/black"
-                android:textSize="14sp"
-                app:layout_constraintStart_toEndOf="@id/imgAvatar"
-                app:layout_constraintTop_toTopOf="@id/imgAvatar"
-                app:layout_constraintEnd_toEndOf="parent" />
-
-            <TextView
-                android:id="@+id/txtName"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_marginTop="4dp"
-                android:text="김○○"
-                android:textStyle="bold"
-                android:textSize="20sp"
-                app:layout_constraintStart_toEndOf="@id/imgAvatar"
-                app:layout_constraintTop_toBottomOf="@id/txtEmail"
-                app:layout_constraintEnd_toEndOf="parent" />
-
-            <!-- 프로필 수정 / 계정 관리 버튼 -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnEditProfile"
-                style="@style/Widget.Material3.Button.ElevatedButton"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:text="프로필 수정"
-                android:textSize="18sp"
-                app:cornerRadius="12dp"
-                app:layout_constraintTop_toBottomOf="@id/imgAvatar"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/btnAccount"
-                app:layout_constraintHorizontal_weight="1"
-                android:layout_marginTop="16dp"
-                android:layout_marginEnd="8dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAccount"
-                style="@style/Widget.Material3.Button.ElevatedButton"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:text="계정 관리"
-                android:textSize="18sp"
-                app:cornerRadius="12dp"
-                app:layout_constraintTop_toBottomOf="@id/imgAvatar"
-                app:layout_constraintStart_toEndOf="@id/btnEditProfile"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_weight="1"
-                android:layout_marginTop="16dp"
-                android:layout_marginStart="8dp" />
+                app:layout_constraintTop_toTopOf="parent">
 
-            <!-- 섹션 타이틀: 내가 완주한 코스 -->
+                <!-- 헤더: 아바타, 이메일, 이름 -->
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/imgAvatar"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:src="@drawable/ic_avatar"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/txtEmail"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="123456789@gmail.com"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    app:layout_constraintStart_toEndOf="@id/imgAvatar"
+                    app:layout_constraintTop_toTopOf="@id/imgAvatar"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
+                <TextView
+                    android:id="@+id/txtName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginTop="4dp"
+                    android:text="김○○"
+                    android:textStyle="bold"
+                    android:textSize="20sp"
+                    app:layout_constraintStart_toEndOf="@id/imgAvatar"
+                    app:layout_constraintTop_toBottomOf="@id/txtEmail"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
+                <!-- 프로필 수정 / 계정 관리 버튼 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEditProfile"
+                    style="@style/Widget.Material3.Button.ElevatedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:text="프로필 수정"
+                    android:textSize="18sp"
+                    app:cornerRadius="12dp"
+                    app:layout_constraintTop_toBottomOf="@id/imgAvatar"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/btnAccount"
+                    app:layout_constraintHorizontal_weight="1"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="8dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAccount"
+                    style="@style/Widget.Material3.Button.ElevatedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:text="계정 관리"
+                    android:textSize="18sp"
+                    app:cornerRadius="12dp"
+                    app:layout_constraintTop_toBottomOf="@id/imgAvatar"
+                    app:layout_constraintStart_toEndOf="@id/btnEditProfile"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_weight="1"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginStart="8dp" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- ✅ 비로그인 시 노출할 버튼 (초기에는 GONE, 코드에서 상태에 따라 보이게) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLogin"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:text="로그인을 해주세요"
+                android:textSize="18sp"
+                app:cornerRadius="12dp"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@id/sectionProfile"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="12dp" />
+
+            <!-- 아래부터는 기존 '완주한 코스/리뷰' 섹션 그대로 이어서 배치 -->
             <TextView
                 android:id="@+id/txtCompletedTitle"
                 android:layout_width="wrap_content"
@@ -105,10 +131,9 @@
                 android:textStyle="bold"
                 android:textSize="16sp"
                 android:layout_marginTop="24dp"
-                app:layout_constraintTop_toBottomOf="@id/btnEditProfile"
+                app:layout_constraintTop_toBottomOf="@id/btnLogin"
                 app:layout_constraintStart_toStartOf="parent" />
 
-            <!-- 가로 리사이클러뷰: 완주 코스 -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvCompleted"
                 android:layout_width="0dp"
@@ -124,7 +149,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
 
-            <!-- 섹션 타이틀: 내가 작성한 리뷰 -->
             <TextView
                 android:id="@+id/txtReviewTitle"
                 android:layout_width="wrap_content"
@@ -136,7 +160,6 @@
                 app:layout_constraintTop_toBottomOf="@id/rvCompleted"
                 app:layout_constraintStart_toStartOf="parent" />
 
-            <!-- 세로 리사이클러뷰: 리뷰 목록 -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvReviews"
                 android:layout_width="0dp"

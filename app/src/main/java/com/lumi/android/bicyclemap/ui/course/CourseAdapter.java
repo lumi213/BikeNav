@@ -1,5 +1,6 @@
 package com.lumi.android.bicyclemap.ui.course;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
@@ -80,6 +81,9 @@ public class CourseAdapter extends ListAdapter<CourseDto, CourseAdapter.CourseVi
         final int ERROR_IMG   = R.drawable.sample_image;  // 로딩 실패
         final int NO_URL_IMG  = R.drawable.noimg;         // URL 없음
 
+        // resolveCourseImage로 대체 리소스 탐색
+        int localResId = resolveCourseImage(h.image.getContext(), r, NO_URL_IMG);
+
         if (r.getImage() != null && !r.getImage().trim().isEmpty()) {
             String src = r.getImage().trim();
             Object glideSrc = src.startsWith("data:image") ? Uri.parse(src) : src;
@@ -88,11 +92,12 @@ public class CourseAdapter extends ListAdapter<CourseDto, CourseAdapter.CourseVi
                     .load(glideSrc)
                     .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                     .placeholder(PLACEHOLDER)
-                    .error(ERROR_IMG)
+                    .error(localResId)   // 💡 실패 시 로컬 이미지 (있으면) 사용
                     .centerCrop()
                     .into(h.image);
         } else {
-            h.image.setImageResource(NO_URL_IMG);
+            // URL 없음 → 로컬 이미지 있으면 사용, 없으면 noimg
+            h.image.setImageResource(localResId);
         }
 
         // 클릭
@@ -100,6 +105,21 @@ public class CourseAdapter extends ListAdapter<CourseDto, CourseAdapter.CourseVi
             viewModel.setSelectedRoute(r);
             if (listener != null) listener.onCourseClick(r);
         });
+    }
+
+    /** 코스ID로 drawable 리소스가 있으면 반환, 없으면 categoryFallback 반환 */
+    private int resolveCourseImage(Context ctx, CourseDto route, int categoryFallback) {
+        // ⚠️ drawable 파일 이름은 'route_<id>.png' 형태로 넣어주세요 (예: route_201.png)
+        // 코스 ID 접근자 이름은 프로젝트에 맞춰 아래 중 하나를 쓰세요.
+        // Integer id = route.getId(); // 또는
+        Integer id = route.getCourse_id(); // ← 이게 없다면 위 라인으로 교체
+
+        if (id != null) {
+            String name = "l" + id; // res/drawable/route_201.png
+            int resId = ctx.getResources().getIdentifier(name, "drawable", ctx.getPackageName());
+            if (resId != 0) return resId;
+        }
+        return categoryFallback;
     }
 
     /* ───────────────────────── ViewHolder ───────────────────────── */
