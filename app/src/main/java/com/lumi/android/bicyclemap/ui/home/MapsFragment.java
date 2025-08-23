@@ -559,8 +559,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
         LatLng user = new LatLng(currLat, currLng);
 
-        // 1) 200m 앞 포인트(UTurn 감지시 보수적으로 짧게)
-        LatLng ahead = computeAheadPoint(route, match, 200.0 /*meters*/, 120.0 /*UTurn deg*/);
+        // 1) n0m 앞 포인트(UTurn 감지시 보수적으로 짧게)
+        LatLng ahead = computeAheadPoint(route, match, 20.0 /*meters*/, 10.0 /*UTurn deg*/);
         if (ahead == null) {
             // fallback: 다음 점이 없으면 bearing만 디바이스 베어링 or 0
             ahead = user;
@@ -841,15 +841,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
         PowerManager pm = (PowerManager) requireContext().getSystemService(android.content.Context.POWER_SERVICE);
         String pkg = requireContext().getPackageName();
 
-        // 이미 최적화 제외 상태라면 아무 것도 하지 않음
         if (pm != null && pm.isIgnoringBatteryOptimizations(pkg)) return;
 
-        // ------ [A안] 한번만 띄우기 ------
         if (AppPrefs.wasBatteryDialogShown(requireContext())) return;
-
-        // ------ [B안] 하루 1회만 띄우기 (원하면 A안 대신 사용) ------
-        // long ONE_DAY = 24L * 60L * 60L * 1000L;
-        // if (AppPrefs.isBatteryDialogThrottled(requireContext(), ONE_DAY)) return;
 
         try {
             // 인텐트 띄우기
@@ -859,7 +853,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback {
 
             // 가드 마킹(원하는 정책(A/B)에 맞게 한쪽만 사용)
             AppPrefs.markBatteryDialogShown(requireContext()); // A안
-            // AppPrefs.stampBatteryDialogNow(requireContext()); // B안
         } catch (Exception ignore) {
             // 일부 기기에서 미지원일 수 있음. 조용히 무시
         }

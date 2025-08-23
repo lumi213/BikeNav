@@ -15,8 +15,6 @@ import com.lumi.android.bicyclemap.MainViewModel;
 import com.lumi.android.bicyclemap.R;
 import com.lumi.android.bicyclemap.api.dto.CourseDto;
 
-import java.util.List;
-
 public class StartupSurveyFragment extends Fragment {
 
     private MainViewModel vm;
@@ -45,28 +43,38 @@ public class StartupSurveyFragment extends Fragment {
         btnSkip      = v.findViewById(R.id.btnSkip);
         loadingPanel = v.findViewById(R.id.loadingPanel);
 
-        // 설문 단계 UI 업데이트
+        // 설문 단계 UI
         vm.getSurveyStep().observe(getViewLifecycleOwner(), step -> {
             if (step != null) updateStep(step);
         });
 
+        // 로딩 상태 관찰 → 패널 토글 + 클릭 가능 여부 제어
+        vm.getSurveyLoading().observe(getViewLifecycleOwner(), loading -> {
+            if (loading == null) return;
+            if (loading) {
+                showLoading();
+            } else {
+                hideLoading();
+            }
+        });
+
         // 추천 결과가 오면 첫 코스를 자동 선택하고 닫기
         vm.getRecommendedCourses().observe(getViewLifecycleOwner(), list -> {
-            if (list == null) return;
-            if (!list.isEmpty()) {
-                CourseDto first = list.get(0);
-                vm.setSelectedRoute(first); // 지도에서 이 코스를 사용
-                closeSelf();
-            }
-            hideLoading();
+            if (list == null || list.isEmpty()) return;
+            CourseDto first = list.get(0);
+            vm.setSelectedRoute(first); // 지도에서 이 코스를 사용
+            closeSelf();
         });
 
         // 좌/우 반 화면 터치
         leftHit.setOnClickListener(view -> onChoose(true));
         rightHit.setOnClickListener(view -> onChoose(false));
 
-        // 스킵: 아무 동작 없이 닫기
-        btnSkip.setOnClickListener(view -> closeSelf());
+        // 스킵: 보류 중인 GPT도 취소하고 닫기
+        btnSkip.setOnClickListener(view -> {
+            vm.cancelSurveyAndPending(); // 로딩/보류 해제
+            closeSelf();
+        });
     }
 
     private void updateStep(int step){
@@ -95,9 +103,8 @@ public class StartupSurveyFragment extends Fragment {
         } else if (step == 2) {
             vm.chooseGroupType(left ? MainViewModel.GroupType.SMALL : MainViewModel.GroupType.LARGE);
         } else { // 마지막 선택
+            // 로딩은 ViewModel이 surveyLoading을 올리면 자동 표시됨
             vm.chooseDifficulty(left ? MainViewModel.Difficulty.EASY : MainViewModel.Difficulty.NORMAL);
-            // VM이 추천을 요청하고 LiveData로 결과를 내놓으면 위 observe에서 자동 선택/종료
-            showLoading();
         }
     }
 

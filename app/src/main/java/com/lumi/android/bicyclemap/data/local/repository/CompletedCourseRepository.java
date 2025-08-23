@@ -1,6 +1,8 @@
-package com.lumi.android.bicyclemap.data.repository;
+package com.lumi.android.bicyclemap.data.local.repository;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 
 import com.lumi.android.bicyclemap.data.local.AppDatabase;
 import com.lumi.android.bicyclemap.data.local.dao.CompletedCourseDao;
@@ -13,6 +15,7 @@ import java.util.concurrent.Executors;
 public class CompletedCourseRepository {
     private final CompletedCourseDao dao;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
+    private final Handler main = new Handler(Looper.getMainLooper());
 
     public CompletedCourseRepository(Context c) {
         dao = AppDatabase.get(c).completedCourseDao();
@@ -27,11 +30,17 @@ public class CompletedCourseRepository {
 
     public interface Callback<T> { void onResult(T data); }
 
-    public void getAll(Callback<List<CompletedCourseEntity>> cb) {
-        io.execute(() -> cb.onResult(dao.getAll()));
+    public void getAll(Callback<List<CompletedCourseEntity>> cb){
+        io.execute(() -> {
+            List<CompletedCourseEntity> list = dao.getAll();
+            if (cb != null) main.post(() -> cb.onResult(list));
+        });
     }
 
-    public void isCompleted(int courseId, Callback<Boolean> cb) {
-        io.execute(() -> cb.onResult(dao.countByCourseId(courseId) > 0));
+    public void isCompleted(int courseId, Callback<Boolean> cb){
+        io.execute(() -> {
+            boolean exists = dao.countByCourseId(courseId) > 0;
+            if (cb != null) main.post(() -> cb.onResult(exists));
+        });
     }
 }

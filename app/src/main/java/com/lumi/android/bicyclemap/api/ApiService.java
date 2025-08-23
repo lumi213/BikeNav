@@ -5,6 +5,7 @@ import com.lumi.android.bicyclemap.api.dto.AuthRequest;
 import com.lumi.android.bicyclemap.api.dto.AuthResponse;
 import com.lumi.android.bicyclemap.api.dto.CourseDto;
 import com.lumi.android.bicyclemap.api.dto.CourseListResponse;
+import com.lumi.android.bicyclemap.api.dto.CourseReviewListResponse;
 import com.lumi.android.bicyclemap.api.dto.LocationRequest;
 import com.lumi.android.bicyclemap.api.dto.PoiDto;
 import com.lumi.android.bicyclemap.api.dto.PoiListResponse;
@@ -88,7 +89,7 @@ public interface ApiService {
     Call<ApiResponse> addCourseReview(@Body ReviewRequest request);
     
     @GET("api/review/course/{courseId}")
-    Call<ApiResponse> getCourseReviews(@Path("courseId") int courseId);
+    Call<ApiResponse<CourseReviewListResponse>> getCourseReviews(@Path("courseId") int courseId);
     
     // 7. 편의시설 API
     @GET("api/course/{courseId}/facilities")

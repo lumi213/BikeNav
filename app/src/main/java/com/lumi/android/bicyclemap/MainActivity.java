@@ -21,6 +21,7 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.snackbar.Snackbar;
 import com.lumi.android.bicyclemap.api.ApiClient;
 import com.lumi.android.bicyclemap.api.ApiService;
 import com.lumi.android.bicyclemap.api.dto.ApiResponse;
@@ -64,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
     private CourseRepository courseRepository;
 
     private BroadcastReceiver arriveReceiver;
+    private boolean arrivalHandled = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Repository 초기화
         viewModel.initRepository(this);
+        viewModel.init(this);
         authRepository = AuthRepository.getInstance(this);
         courseRepository = new CourseRepository(this);
 
@@ -136,10 +139,35 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // ✅ 추천 완료 후 ViewModel이 코스를 선택하면 지도 탭으로 포커스 이동
+        // 추천 완료 후 ViewModel이 코스를 선택하면 지도 탭으로 포커스 이동
         viewModel.getSelectedRoute().observe(this, route -> {
             if (route != null && bottomNavigationView.getSelectedItemId() != R.id.navigation_maps) {
                 setBottomNavigationSelected(R.id.navigation_maps);
+            }
+        });
+
+        // ★ 추천 이유 스낵바 표시
+        viewModel.getRecommendationToast().observe(this, msg -> {
+            if (msg != null && !msg.trim().isEmpty()) {
+                Snackbar sb = Snackbar
+                        .make(findViewById(android.R.id.content), msg, Snackbar.LENGTH_LONG)
+                        .setAction("보기", v -> setBottomNavigationSelected(R.id.navigation_maps));
+                // 바텀내비를 쓰고 있다면 스낵바를 그 위에 앵커
+                if (bottomNavigationView != null) {
+                    sb.setAnchorView(bottomNavigationView);
+                }
+                sb.show();
+                viewModel.clearRecommendationToast();
+            }
+        });
+
+        // (선택) 에러 메시지 스낵바/토스트
+        viewModel.getErrorMessage().observe(this, err -> {
+            if (err != null && !err.trim().isEmpty()) {
+                Snackbar sb = Snackbar
+                        .make(findViewById(android.R.id.content), err, Snackbar.LENGTH_LONG);
+                if (bottomNavigationView != null) sb.setAnchorView(bottomNavigationView);
+                sb.show();
             }
         });
 
@@ -159,6 +187,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startTrackingService() {
+        arrivalHandled = false;
         Intent i = new Intent(this, TrackingService.class)
                 .setAction(TrackingService.ACTION_START);
         ContextCompat.startForegroundService(this, i);
@@ -249,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
                 dto.poi = coursePoiMap.getOrDefault(dto.getCourse_id(), new ArrayList<>());
 
                 try {
-                    Response<ApiResponse<CourseDto>> detailResp =
+                    Response<com.lumi.android.bicyclemap.api.dto.ApiResponse<CourseDto>> detailResp =
                             api.getCourseDetail(dto.getCourse_id()).execute();
 
                     if (detailResp.isSuccessful()
@@ -457,7 +486,6 @@ public class MainActivity extends AppCompatActivity {
         return sb.toString();
     }
 
-    // tag 예: "[{\"tag1\":\"한식\"},{\"tag2\":\"면요리\"}]"
     private List<String> parseTags(String raw) {
         List<String> out = new ArrayList<>();
         if (raw == null || raw.trim().isEmpty()) return out;
@@ -493,9 +521,14 @@ public class MainActivity extends AppCompatActivity {
             arriveReceiver = new BroadcastReceiver() {
                 @Override public void onReceive(Context context, Intent intent) {
                     if (TrackingService.ACTION_ARRIVED.equals(intent.getAction())) {
-                        long routeId = intent.getLongExtra(TrackingService.EXTRA_ROUTE_ID, -1);
+                        int trackingId = (int)intent.getLongExtra(TrackingService.EXTRA_ROUTE_ID, -1);
                         String routeTitle = intent.getStringExtra(TrackingService.EXTRA_ROUTE_TITLE);
-                        showCourseReviewDialog(routeId, routeTitle, /*trackingId=*/0);
+
+                        // ✅ 중복 도착 방지
+                        if (arrivalHandled) return;
+                        arrivalHandled = true;
+
+                        handleArrival(viewModel.getSelectedRoute().getValue().getCourse_id(), routeTitle, trackingId);
                     }
                 }
             };
@@ -512,17 +545,23 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void showEndDialogAndReview(long routeId, String routeTitle) {
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("산책 종료")
-                .setMessage("목적지에 도착했습니다. 산책을 종료할까요?")
-                .setCancelable(false)
-                .setNegativeButton("취소", (d, w) -> d.dismiss())
-                .setPositiveButton("종료", (d, w) -> {
-                    d.dismiss();
-                    showCourseReviewDialog(routeId, routeTitle, /*trackingId=*/0);
-                })
-                .show();
+    /** ✅ 도착 처리: 저장(한 번만) → 상태 리셋 → 리뷰 다이얼로그 */
+    private void handleArrival(long routeId, String routeTitle, int trackingId ) {
+        // 상태 리셋
+        viewModel.resetMapState();
+
+        // DB에 이미 있나 확인 후 없으면 저장 (한 번만)
+        viewModel.isCourseCompleted((int) routeId, exists -> {
+            if (!exists) {
+                viewModel.markCourseCompleted((int) routeId, routeTitle,
+                        () -> Log.d("COMPLETED", "Saved completion: " + routeId));
+            } else {
+                Log.d("COMPLETED", "Already completed: " + routeId);
+            }
+        });
+
+        // 리뷰 다이얼로그
+        showCourseReviewDialog(routeId, routeTitle, trackingId);
     }
 
     private void showCourseReviewDialog(long courseId, String title, int trackingId) {
@@ -536,6 +575,9 @@ public class MainActivity extends AppCompatActivity {
         TextView tvTitle = view.findViewById(R.id.tvCourseTitle);
         tvTitle.setText("‘" + title + "’ 코스는 어땠나요?");
 
+        viewModel.markCourseCompleted((int) courseId, title, () ->
+                Toast.makeText(MainActivity.this, "완주 기록을 저장했어요.", Toast.LENGTH_SHORT).show()
+        );
         new AlertDialog.Builder(this)
                 .setView(view)
                 .setCancelable(false)
@@ -559,14 +601,22 @@ public class MainActivity extends AppCompatActivity {
                     new ReviewRepository(this)
                             .submit(body, new ReviewRepository.Listener() {
                                 @Override public void onSuccess(ApiResponse res) {
-                                    Toast.makeText(MainActivity.this, "리뷰가 저장되었습니다.", Toast.LENGTH_SHORT).show();
+                                    safeToast("리뷰가 저장되었습니다.");
                                 }
                                 @Override public void onError(Throwable t) {
-                                    Toast.makeText(MainActivity.this, "리뷰 전송 실패: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                                    safeToast("리뷰 전송 실패: " + t.getMessage());
                                 }
                             });
+
 
                 })
                 .show();
     }
+
+    private void safeToast(String msg) {
+        runOnUiThread(() ->
+                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show()
+        );
+    }
+
 }

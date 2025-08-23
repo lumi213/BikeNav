@@ -6,6 +6,14 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.ContextThemeWrapper;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -14,14 +22,8 @@ import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-
-import android.view.ContextThemeWrapper;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.Toast;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
@@ -31,49 +33,83 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.lumi.android.bicyclemap.MainViewModel;
 import com.lumi.android.bicyclemap.R;
+import com.lumi.android.bicyclemap.api.ApiClient;
+import com.lumi.android.bicyclemap.api.ApiService;
+import com.lumi.android.bicyclemap.api.dto.ApiResponse;
+import com.lumi.android.bicyclemap.api.dto.CourseDto;
+import com.lumi.android.bicyclemap.api.dto.CourseReviewDto;
+import com.lumi.android.bicyclemap.api.dto.CourseReviewListResponse;
+import com.lumi.android.bicyclemap.data.local.entity.CompletedCourseEntity;
+import com.lumi.android.bicyclemap.data.local.repository.CompletedCourseRepository;
 import com.lumi.android.bicyclemap.repository.AuthRepository;
+import com.lumi.android.bicyclemap.ui.course.CourseAdapter;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+/**
+ * 설정 탭
+ * - 프로필/로그인
+ * - 내가 완주한 코스: CourseAdapter(item_course) (최신순)
+ * - 내가 작성한 리뷰: /api/review/course/{courseId} 를 코스별로 호출 → user_id 로 필터
+ * - 토큰 만료(401/403) 시 재로그인 다이얼로그 → 성공 후 자동 재시도
+ */
 public class SettingFragment extends Fragment {
 
     private SettingViewModel viewModel;
     private MainViewModel mainViewModel;
 
-    // UI
+    // ===== 프로필/로그인 UI =====
     private ConstraintLayout sectionProfile;
     private ShapeableImageView imgAvatar;
     private TextView txtEmail, txtName;
     private MaterialButton btnEditProfile, btnAccount, btnLogin;
 
-    // 프로필 이미지 로컬 저장 키
     private static final String PREFS = "my_page_prefs";
     private static final String KEY_PROFILE_IMAGE_URI = "profile_image_uri";
 
-    // ✅ OpenDocument: 영구 접근 가능 (persistable)
-    // MIME 타입 배열을 받는다. 이미지만 고를 거면 "image/*" 하나만 주면 됨.
     private final ActivityResultLauncher<String[]> openImageDocument =
             registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
                 if (uri != null) {
-                    // 영구 접근 플래그 요청: READ(필수) + (가능하면) WRITE
                     final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                             | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
                     try {
                         requireContext().getContentResolver()
                                 .takePersistableUriPermission(uri, takeFlags);
                     } catch (Exception ignore) {
-                        // 일부 프로바이더는 WRITE를 안 줄 수 있음. READ만으로도 충분.
                         try {
                             requireContext().getContentResolver()
                                     .takePersistableUriPermission(uri,
                                             Intent.FLAG_GRANT_READ_URI_PERMISSION);
                         } catch (Exception ignoredAgain) {}
                     }
-
-                    // UI 반영
                     Glide.with(this).load(uri).into(imgAvatar);
-                    // 문자열로 저장 (재부팅/재실행 후에도 사용 가능)
                     saveProfileImage(requireContext(), uri.toString());
                 }
             });
+
+    // ===== 리스트 UI =====
+    private RecyclerView rvCompleted, rvMyReviews;
+    private TextView txtCompletedTitle, txtReviewTitle;
+
+    private CourseAdapter     completedAdapter; // item_course
+    private ReviewCardAdapter reviewAdapter;    // item_review
+
+    // 코스 캐시 (courseId → CourseDto)
+    private final HashMap<Integer, CourseDto> courseCache = new HashMap<>();
+
+    // 리뷰 로딩 상태
+    private boolean loadingMyReviews = false;
+
+    // 재로그인 다이얼로그 제어
+    private boolean isAuthDialogShowing = false;
+    private Runnable pendingAfterLogin = null;
 
     public SettingFragment() { }
 
@@ -90,56 +126,218 @@ public class SettingFragment extends Fragment {
                               @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        viewModel = new ViewModelProvider(requireActivity()).get(SettingViewModel.class);
+        // ===== VM =====
+        viewModel     = new ViewModelProvider(requireActivity()).get(SettingViewModel.class);
         mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
-        // 뷰 바인딩
+        // ===== 프로필 바인딩 =====
         sectionProfile = view.findViewById(R.id.sectionProfile);
-        imgAvatar = view.findViewById(R.id.imgAvatar);
-        txtEmail = view.findViewById(R.id.txtEmail);
-        txtName = view.findViewById(R.id.txtName);
+        imgAvatar      = view.findViewById(R.id.imgAvatar);
+        txtEmail       = view.findViewById(R.id.txtEmail);
+        txtName        = view.findViewById(R.id.txtName);
         btnEditProfile = view.findViewById(R.id.btnEditProfile);
-        btnAccount = view.findViewById(R.id.btnAccount);
-        btnLogin = view.findViewById(R.id.btnLogin);
+        btnAccount     = view.findViewById(R.id.btnAccount);
+        btnLogin       = view.findViewById(R.id.btnLogin);
 
-        // 로그인 상태에 따른 UI 토글
         boolean loggedIn = AuthRepository.getInstance(requireContext()).isLoggedIn();
         toggleLoginStateUI(loggedIn);
 
-        // 저장된 아바타 로드 (persistable Uri)
         String saved = getSavedProfileImage(requireContext());
-        if (saved != null && !saved.isEmpty()) {
-            Glide.with(this).load(Uri.parse(saved)).into(imgAvatar);
-        }
+        if (!TextUtils.isEmpty(saved)) Glide.with(this).load(Uri.parse(saved)).into(imgAvatar);
 
-        // 프로필 수정 → OpenDocument 실행
-        btnEditProfile.setOnClickListener(v -> {
-            // SAF 문서 선택기 실행 (이미지 전용)
-            // 최초 1회 선택 후 앱 재실행/재부팅해도 접근 가능(위의 takePersistableUriPermission 덕분)
-            openImageDocument.launch(new String[]{"image/*"});
-        });
-
+        btnEditProfile.setOnClickListener(v -> openImageDocument.launch(new String[]{"image/*"}));
         btnAccount.setOnClickListener(v -> {
-            // TODO: 계정 관리 화면으로 이동 (프로젝트 라우팅에 맞춰 연결)
-            // 예) startActivity(new Intent(requireContext(), AccountActivity.class));
-            // 또는 NavController 사용 시: findNavController().navigate(R.id.action_setting_to_account);
+            // TODO: 계정 관리 화면 이동
+        });
+        btnLogin.setOnClickListener(v -> showAuthDialog(null));
+
+        // ===== 리스트 바인딩 =====
+        rvCompleted      = view.findViewById(R.id.rvCompleted);
+        rvMyReviews      = view.findViewById(R.id.rvReviews);
+        txtCompletedTitle= view.findViewById(R.id.txtCompletedTitle);
+        txtReviewTitle   = view.findViewById(R.id.txtReviewTitle);
+
+        rvCompleted.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
+        rvMyReviews.setLayoutManager(new LinearLayoutManager(requireContext()));
+
+        completedAdapter = new CourseAdapter(mainViewModel);
+        reviewAdapter    = new ReviewCardAdapter();
+        rvCompleted.setAdapter(completedAdapter);
+        rvMyReviews.setAdapter(reviewAdapter);
+
+        // 코스 목록 들어오면 캐시에 담고 섹션 갱신
+        mainViewModel.getAllRoutes().observe(getViewLifecycleOwner(), routes -> {
+            courseCache.clear();
+            if (routes != null) for (CourseDto c : routes) courseCache.put(c.getCourse_id(), c);
+            loadCompletedList();
+            loadMyReviewsAcrossCourses(); // 로그인 상태라면 내 리뷰 로드
         });
 
-        btnLogin.setOnClickListener(v -> {
-            // TODO: 로그인 화면으로 이동
-            // 로그인 성공 시 아래 두 줄을 콜백에서 실행해주면 UI 갱신됨
-            // toggleLoginStateUI(true);
-            // bindUserInfo();
-        });
+        // 초기도 로드
+        loadCompletedList();
+        loadMyReviewsAcrossCourses();
+    }
 
-        btnLogin.setOnClickListener(v -> {
-            showAuthDialog();
+    // ─────────────────────────────────────────────────────────────────────
+    // 완주 목록 (로컬 DB → 최신순)  → CourseAdapter(item_course)
+    // ─────────────────────────────────────────────────────────────────────
+    private void loadCompletedList() {
+        mainViewModel.fetchCompleted(new CompletedCourseRepository.Callback<List<CompletedCourseEntity>>() {
+            @Override public void onResult(List<CompletedCourseEntity> data) {
+                List<CourseDto> mapped = new ArrayList<>();
+                if (data != null) {
+                    for (CompletedCourseEntity e : data) {
+                        CourseDto c = courseCache.get(e.courseId);
+                        if (c != null) mapped.add(c);
+                    }
+                }
+                completedAdapter.submitList(mapped);
+                toggleCompletedSection(!mapped.isEmpty());
+            }
         });
     }
 
-    /** 로그인/회원가입 팝업 */
-    private void showAuthDialog() {
-        ContextThemeWrapper dialogCtx = new ContextThemeWrapper(requireContext(), com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog);
+    private void toggleCompletedSection(boolean show) {
+        if (txtCompletedTitle != null) txtCompletedTitle.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (rvCompleted != null)       rvCompleted.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 내 리뷰 로드:
+    // - 모든 코스에 대해 /api/review/course/{courseId} 호출
+    // - user_id == currentUserId 만 수집
+    // - 401/403 → 재로그인 다이얼로그 → 성공 시 전체 재시도
+    // ─────────────────────────────────────────────────────────────────────
+    private void loadMyReviewsAcrossCourses() {
+        AuthRepository auth = AuthRepository.getInstance(requireContext());
+        if (!auth.isLoggedIn()) {
+            reviewAdapter.submit(new ArrayList<>());
+            toggleMyReviewsSection(false);
+            return;
+        }
+        List<CourseDto> routes = mainViewModel.getAllRoutes().getValue();
+        if (routes == null || routes.isEmpty()) {
+            reviewAdapter.submit(new ArrayList<>());
+            toggleMyReviewsSection(false);
+            return;
+        }
+        if (loadingMyReviews) return; // 중복 방지
+        loadingMyReviews = true;
+
+        int userId = auth.getCurrentUserId();
+        ApiService api = ApiClient.getInstance(requireContext()).getApiService();
+        List<ReviewCardAdapter.Row> myRows = new ArrayList<>();
+
+        fetchNextCourseReviewSequential(api, routes, 0, userId, myRows, new Runnable() {
+            @Override public void run() {
+                loadingMyReviews = false;
+                reviewAdapter.submit(myRows);
+                toggleMyReviewsSection(!myRows.isEmpty());
+            }
+        });
+    }
+
+    private void fetchNextCourseReviewSequential(ApiService api,
+                                                 List<CourseDto> routes,
+                                                 int index,
+                                                 int userId,
+                                                 List<ReviewCardAdapter.Row> acc,
+                                                 Runnable done) {
+        if (index >= routes.size()) {
+            done.run();
+            return;
+        }
+        CourseDto course = routes.get(index);
+        int courseId = course.getCourse_id();
+
+        Call<ApiResponse<CourseReviewListResponse>> call = api.getCourseReviews(courseId);
+        call.enqueue(new Callback<ApiResponse<CourseReviewListResponse>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<CourseReviewListResponse>> c,
+                                   Response<ApiResponse<CourseReviewListResponse>> res) {
+                // 인증 실패 처리
+                if (res.code() == 401 || res.code() == 403) {
+                    loadingMyReviews = false; // 재시도 가능하게 해제
+                    handleAuthFailureRetry(() -> loadMyReviewsAcrossCourses());
+                    return;
+                }
+
+                if (res.isSuccessful() && res.body() != null && res.body().isSuccess()
+                        && res.body().getData() != null && res.body().getData().reviews != null) {
+                    for (CourseReviewDto r : res.body().getData().reviews) {
+                        if (r.user_id == userId) {
+                            String title = safe(course.getTitle());
+                            String diffBadge = diffToBadge(course.getDiff());
+                            String detail = buildCourseDetail(course);
+                            String thumbUrl = course.getImage();
+                            String content = safe(r.content);
+                            acc.add(new ReviewCardAdapter.Row(title, diffBadge, detail, content, thumbUrl));
+                        }
+                    }
+                }
+                // 다음 코스
+                fetchNextCourseReviewSequential(api, routes, index + 1, userId, acc, done);
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<CourseReviewListResponse>> c, Throwable t) {
+                // 네트워크 실패 → 그냥 다음 코스로 진행
+                fetchNextCourseReviewSequential(api, routes, index + 1, userId, acc, done);
+            }
+        });
+    }
+
+    /** 토큰 만료 시 재로그인 다이얼로그를 띄우고, 성공하면 retryAction 실행 */
+    private void handleAuthFailureRetry(Runnable retryAction) {
+        if (getActivity() == null) return;
+        requireActivity().runOnUiThread(() -> {
+            if (isAuthDialogShowing) {
+                // 이미 열려있다면, 로그인 성공 후 실행할 작업만 갱신
+                pendingAfterLogin = retryAction;
+                return;
+            }
+            showAuthDialog(retryAction);
+        });
+    }
+
+    private void toggleMyReviewsSection(boolean show) {
+        if (txtReviewTitle != null) txtReviewTitle.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (rvMyReviews != null)    rvMyReviews.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    private String diffToBadge(Integer diff) {
+        if (diff == null) return "";
+        if (diff == 1) return " 상";
+        if (diff == 2) return " 중";
+        if (diff == 3) return " 하";
+        return "";
+    }
+
+    private String buildCourseDetail(CourseDto c) {
+        if (c == null) return "";
+        String dist = String.format(Locale.getDefault(), "경로 %.1fkm", c.getDist_km());
+        String time = (c.getTime() + "분");
+        String tag1 = (c.getTags() != null && !c.getTags().isEmpty()) ? (" · #" + c.getTags().get(0)) : "";
+        String mid = (!TextUtils.isEmpty(dist) && !TextUtils.isEmpty(time)) ? " · " : "";
+        return (dist + mid + time + tag1).trim();
+    }
+
+    private String safe(String s){ return s == null ? "" : s; }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 로그인/회원가입 다이얼로그
+    //  - afterLogin != null 이면 로그인 성공 후 해당 Runnable 실행
+    // ─────────────────────────────────────────────────────────────────────
+    private void showAuthDialog(@Nullable Runnable afterLogin) {
+        if (isAuthDialogShowing) { // 이미 떠 있으면 콜백만 바꿔두고 종료
+            pendingAfterLogin = afterLogin;
+            return;
+        }
+        isAuthDialogShowing = true;
+        pendingAfterLogin = afterLogin;
+
+        ContextThemeWrapper dialogCtx = new ContextThemeWrapper(requireContext(),
+                com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog);
 
         View dialogView = LayoutInflater.from(dialogCtx).inflate(R.layout.dialog_auth, null, false);
         TextInputLayout tilName = dialogView.findViewById(R.id.tilName);
@@ -153,18 +351,16 @@ public class SettingFragment extends Fragment {
         MaterialButton btnSubmit = dialogView.findViewById(R.id.btnSubmit);
         ProgressBar progress = dialogView.findViewById(R.id.progress);
 
-        final boolean[] isRegisterMode = { false }; // false=로그인, true=회원가입
+        final boolean[] isRegisterMode = { false };
+        final Dialog dialog = new MaterialAlertDialogBuilder(dialogCtx)
+                .setView(dialogView).setCancelable(false).create();
 
-        Dialog dialog = new MaterialAlertDialogBuilder(dialogCtx).setView(dialogView).setCancelable(false).create();
-        // 모드 전환 UI 반영
         Runnable applyMode = () -> {
             if (isRegisterMode[0]) {
-                //tvTitle.setText("회원가입");
                 tilName.setVisibility(View.VISIBLE);
                 btnSubmit.setText("회원가입");
                 btnSwitch.setText("로그인");
             } else {
-                //tvTitle.setText("로그인");
                 tilName.setVisibility(View.GONE);
                 btnSubmit.setText("로그인");
                 btnSwitch.setText("회원가입");
@@ -172,77 +368,73 @@ public class SettingFragment extends Fragment {
         };
         applyMode.run();
 
-        // 전환 버튼
         btnSwitch.setOnClickListener(v -> {
             isRegisterMode[0] = !isRegisterMode[0];
             applyMode.run();
         });
 
-        // 취소
-        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnCancel.setOnClickListener(v -> {
+            dialog.dismiss();
+            isAuthDialogShowing = false;
+            // 취소 시 대기중이던 작업은 버림
+            pendingAfterLogin = null;
+        });
 
-        // 전송(로그인/회원가입)
         btnSubmit.setOnClickListener(v -> {
             String email = etEmail.getText() == null ? "" : etEmail.getText().toString().trim();
             String pwd   = etPassword.getText() == null ? "" : etPassword.getText().toString();
 
-            // 간단한 검증
             tilEmail.setError(null);
             tilPassword.setError(null);
             tilName.setError(null);
 
-            if (email.isEmpty()) {
-                tilEmail.setError("이메일을 입력하세요.");
-                return;
-            }
-            if (pwd.length() < 8) {
-                tilPassword.setError("비밀번호는 8자 이상이어야 합니다.");
-                return;
-            }
+            if (email.isEmpty()) { tilEmail.setError("이메일을 입력하세요."); return; }
+            if (pwd.length() < 8) { tilPassword.setError("비밀번호는 8자 이상이어야 합니다."); return; }
 
             if (isRegisterMode[0]) {
                 String name = etName.getText() == null ? "" : etName.getText().toString().trim();
-                if (name.isEmpty()) {
-                    tilName.setError("이름을 입력하세요.");
-                    return;
-                }
-                // 회원가입 호출
+                if (name.isEmpty()) { tilName.setError("이름을 입력하세요."); return; }
+
                 setLoading(true, progress, btnSubmit, btnSwitch, btnCancel);
                 AuthRepository.getInstance(requireContext())
-                        .register(name, pwd, email, new AuthRepository.RepositoryCallback<com.lumi.android.bicyclemap.api.dto.ApiResponse>() {
-                            @Override
-                            public void onSuccess(com.lumi.android.bicyclemap.api.dto.ApiResponse response) {
+                        .register(name, pwd, email, new AuthRepository.RepositoryCallback<ApiResponse>() {
+                            @Override public void onSuccess(ApiResponse response) {
                                 setLoading(false, progress, btnSubmit, btnSwitch, btnCancel);
                                 Toast.makeText(requireContext(), response.getMessage() != null ? response.getMessage() : "회원가입 성공", Toast.LENGTH_SHORT).show();
-                                // 회원가입 후 로그인 모드로 전환
                                 isRegisterMode[0] = false;
                                 applyMode.run();
                             }
-                            @Override
-                            public void onError(String errorMessage) {
+                            @Override public void onError(String errorMessage) {
                                 setLoading(false, progress, btnSubmit, btnSwitch, btnCancel);
                                 Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show();
                             }
                         });
 
             } else {
-                // 로그인 호출
                 setLoading(true, progress, btnSubmit, btnSwitch, btnCancel);
                 AuthRepository.getInstance(requireContext())
                         .login(email, pwd, new AuthRepository.RepositoryCallback<com.lumi.android.bicyclemap.api.dto.AuthResponse>() {
-                            @Override
-                            public void onSuccess(com.lumi.android.bicyclemap.api.dto.AuthResponse response) {
+                            @Override public void onSuccess(com.lumi.android.bicyclemap.api.dto.AuthResponse response) {
                                 setLoading(false, progress, btnSubmit, btnSwitch, btnCancel);
                                 Toast.makeText(requireContext(), response.getMessage() != null ? response.getMessage() : "로그인 성공", Toast.LENGTH_SHORT).show();
-
-                                // 프로필 섹션 갱신
                                 toggleLoginStateUI(true);
-                                // 바인딩(이메일/이름)
                                 bindUserInfo();
+
+                                // 로그인 성공 → 대기 중 작업 실행 또는 기본 동작
+                                Runnable task = pendingAfterLogin;
+                                pendingAfterLogin = null;
                                 dialog.dismiss();
+                                isAuthDialogShowing = false;
+
+                                if (task != null) {
+                                    task.run();
+                                } else {
+                                    // 기본: 내 리뷰/완주 갱신
+                                    loadMyReviewsAcrossCourses();
+                                    loadCompletedList();
+                                }
                             }
-                            @Override
-                            public void onError(String errorMessage) {
+                            @Override public void onError(String errorMessage) {
                                 setLoading(false, progress, btnSubmit, btnSwitch, btnCancel);
                                 Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show();
                             }
@@ -269,14 +461,15 @@ public class SettingFragment extends Fragment {
         } else {
             sectionProfile.setVisibility(View.GONE);
             btnLogin.setVisibility(View.VISIBLE);
+            toggleMyReviewsSection(false);
         }
     }
 
     private void bindUserInfo() {
         String email = AuthRepository.getInstance(requireContext()).getUserEmail();
-        String name = AuthRepository.getInstance(requireContext()).getUserName();
-        if (email != null && !email.isEmpty()) txtEmail.setText(email);
-        if (name != null && !name.isEmpty())   txtName.setText(name);
+        String name  = AuthRepository.getInstance(requireContext()).getUserName();
+        if (!TextUtils.isEmpty(email)) txtEmail.setText(email);
+        if (!TextUtils.isEmpty(name))  txtName.setText(name);
     }
 
     // ===== 저장/로드 유틸 =====
@@ -284,7 +477,6 @@ public class SettingFragment extends Fragment {
         SharedPreferences sp = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         sp.edit().putString(KEY_PROFILE_IMAGE_URI, uri).apply();
     }
-
     private String getSavedProfileImage(Context c) {
         SharedPreferences sp = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         return sp.getString(KEY_PROFILE_IMAGE_URI, "");

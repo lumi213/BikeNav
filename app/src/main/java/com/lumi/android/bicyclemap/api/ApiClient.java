@@ -39,7 +39,7 @@ public class ApiClient {
 
         // Retrofit 설정
         retrofit = new Retrofit.Builder()
-                .baseUrl(TEST_URL) // URL교체부분
+                .baseUrl(HOT_URL) // URL교체부분
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
