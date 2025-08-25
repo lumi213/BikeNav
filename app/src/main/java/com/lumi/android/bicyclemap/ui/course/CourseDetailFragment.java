@@ -5,7 +5,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -15,6 +14,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
@@ -35,23 +35,24 @@ import com.lumi.android.bicyclemap.Point;
 import com.lumi.android.bicyclemap.R;
 import com.lumi.android.bicyclemap.api.dto.CourseDto;
 import com.lumi.android.bicyclemap.api.dto.PoiDto;
+import com.lumi.android.bicyclemap.databinding.FragmentCourseDetailBinding;
 
 import java.util.Map;
 
 public class CourseDetailFragment extends Fragment implements OnMapReadyCallback {
 
     /* ───────── 필드 ───────── */
+    public static final String ARG_ROUTE = "CourseDto";
+
+    private FragmentCourseDetailBinding binding;  // ✅ 뷰바인딩
     private CourseDto route;
     private GoogleMap map;
     private MainViewModel viewModel;
 
-    public static final String ARG_ROUTE = "CourseDto";
-
-    /* ───────── 인스턴스 팩토리 ───────── */
+    /* ───────── 팩토리 ───────── */
     public static CourseDetailFragment newInstance(CourseDto route) {
         Bundle args = new Bundle();
         args.putSerializable(ARG_ROUTE, route);
-
         CourseDetailFragment f = new CourseDetailFragment();
         f.setArguments(args);
         return f;
@@ -61,12 +62,12 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup container,
+                             @Nullable android.view.ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        binding = FragmentCourseDetailBinding.inflate(inflater, container, false);
+        View v = binding.getRoot();
 
-        View v = inflater.inflate(R.layout.fragment_course_detail, container, false);
-
-        // Route 객체 획득
+        // Route 획득
         if (getArguments() != null) {
             route = (CourseDto) getArguments().getSerializable(ARG_ROUTE);
         }
@@ -74,28 +75,55 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
         // ViewModel
         viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
-        // 네비게이션 바 다시 보이게
-        requireActivity().findViewById(R.id.nav_view).setVisibility(View.VISIBLE);
+        // 네비게이션 바 노출 (Activity 뷰에 직접 접근하므로 try/catch)
+        View nav = requireActivity().findViewById(R.id.nav_view);
+        if (nav != null) nav.setVisibility(View.VISIBLE);
 
-        /* ─── View 참조 ─── */
-        ImageView image       = v.findViewById(R.id.detail_image);
-        TextView  title       = v.findViewById(R.id.detail_title);
-        TextView  info        = v.findViewById(R.id.detail_info);
-        TextView  explanation = v.findViewById(R.id.detail_explanation);
-        LinearLayout tagsLay  = v.findViewById(R.id.detail_tags);
-        TextView  tourPoints  = v.findViewById(R.id.detail_tour_points);
-        TextView  surrounding = v.findViewById(R.id.surrounding_points);
-        Button    btnNavigate = v.findViewById(R.id.btn_navigate);
+        bindViews();
+
+        return v;
+    }
+
+    /* ───────── onViewCreated ───────── */
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        // 지도 콜백 등록은 반드시 뷰 생성 이후에
+        SupportMapFragment mapFrag =
+                (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.detail_map);
+        if (mapFrag != null) {
+            mapFrag.getMapAsync(this);
+        }
+    }
+
+    /* ───────── GoogleMap 콜백 ───────── */
+    @Override
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+        // 뷰/수명주기 가드
+        if (!isAdded() || binding == null ||
+                !getViewLifecycleOwner().getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED)) {
+            return;
+        }
+        map = googleMap;
+        drawRouteOnMap();
+    }
+
+    /* ───────── 바인딩 로직 ───────── */
+    private void bindViews() {
+        ImageView image       = binding.detailImage;
+        TextView  title       = binding.detailTitle;
+        TextView  info        = binding.detailInfo;
+        TextView  explanation = binding.detailExplanation;
+        LinearLayout tagsLay  = binding.detailTags;
+        TextView  tourPoints  = binding.detailTourPoints;
+        TextView  surrounding = binding.surroundingPoints;
+        Button    btnNavigate = binding.btnNavigate;
 
         if (route != null) {
-
-
-            /* ───── 이미지 로딩 변경 ───── */
+            // ── 이미지 로딩 ──
             final int PLACEHOLDER = R.drawable.loading;       // 로딩 중
-            final int ERROR_IMG   = R.drawable.sample_image;  // 로딩 실패
             final int NO_URL_IMG  = R.drawable.noimg;         // URL 없음
 
-            // resolveCourseImage로 대체 리소스 탐색
             int localResId = resolveCourseImage(image.getContext(), route, NO_URL_IMG);
 
             if (route.getImage() != null && !route.getImage().trim().isEmpty()) {
@@ -106,23 +134,21 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
                         .load(glideSrc)
                         .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                         .placeholder(PLACEHOLDER)
-                        .error(localResId)   // 💡 실패 시 로컬 이미지 (있으면) 사용
+                        .error(localResId)   // 실패 시 로컬 대체
                         .centerCrop()
                         .into(image);
             } else {
-                // URL 없음 → 로컬 이미지 있으면 사용, 없으면 noimg
                 image.setImageResource(localResId);
             }
-            /* ─────────────────────── */
 
-            // 텍스트 바인딩
+            // ── 텍스트 ──
             title.setText(route.getTitle());
-            info.setText("코스 " + route.getDist_km() + "Km · " + route.getTime() + "분 · " +
-                    (route.getTourist_spots() != null && !route.getTourist_spots().isEmpty()
-                            ? route.getTourist_spots().get(0) : ""));
+            String spot = (route.getTourist_spots() != null && !route.getTourist_spots().isEmpty())
+                    ? route.getTourist_spots().get(0) : "";
+            info.setText("코스 " + route.getDist_km() + "Km · " + route.getTime() + "분 · " + spot);
             explanation.setText(route.getDescription() != null ? route.getDescription() : "");
 
-            // 해시태그
+            // ── 태그 ──
             tagsLay.removeAllViews();
             if (route.getTags() != null) {
                 for (String tag : route.getTags()) {
@@ -130,19 +156,19 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
                     chip.setText("#" + tag);
                     chip.setTextColor(0xFF555555);
                     chip.setTextSize(12);
-                    chip.setPadding(0,0,24,0);
+                    chip.setPadding(0, 0, dp(24), 0);
                     tagsLay.addView(chip);
                 }
             }
 
-            // 관광 포인트
+            // ── 관광 포인트 ──
             if (route.getTourist_spots() != null) {
                 StringBuilder sb = new StringBuilder();
                 for (String p : route.getTourist_spots()) sb.append("• ").append(p).append('\n');
                 tourPoints.setText(sb.toString());
             }
 
-            // 주변 POI
+            // ── 주변 POI 텍스트 ──
             if (route.getNearby_businesses() != null) {
                 StringBuilder sb = new StringBuilder();
                 for (String p : route.getNearby_businesses()) sb.append("• ").append(p).append('\n');
@@ -150,33 +176,20 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
             }
         }
 
-        /* ─── 버튼: 코스 시작 ─── */
+        // ── 버튼: 코스 시작 ──
         btnNavigate.setOnClickListener(v1 -> {
             viewModel.setSelectedRoute(route);
             viewModel.setMapState(MainViewModel.MapState.WALKING);
-
             if (getActivity() instanceof MainActivity) {
                 ((MainActivity) getActivity()).setBottomNavigationSelected(R.id.navigation_maps);
             }
         });
-
-        /* ─── 지도 ─── */
-        SupportMapFragment mapFrag =
-                (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.detail_map);
-        if (mapFrag != null) mapFrag.getMapAsync(this);
-
-        return v;
     }
 
-    /* ───────── GoogleMap 콜백 ───────── */
-    @Override
-    public void onMapReady(@NonNull GoogleMap googleMap) {
-        map = googleMap;
-        drawRouteOnMap();
-    }
-
+    /* ───────── 경로/POI 그리기 ───────── */
     private void drawRouteOnMap() {
-        if (map == null || route == null || route.getPath() == null || route.getPath().isEmpty()) return;
+        if (map == null || binding == null || route == null ||
+                route.getPath() == null || route.getPath().isEmpty()) return;
 
         PolylineOptions poly = new PolylineOptions().width(10).color(0xFF1976D2);
         LatLngBounds.Builder bounds = new LatLngBounds.Builder();
@@ -188,16 +201,14 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
         }
         map.addPolyline(poly);
 
-        View container = requireView().findViewById(R.id.detail_map);
         fitBoundsSafe(map, bounds.build());
-        //map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 100));
 
         if (route.poi != null) {
             Map<Integer, PoiDto> poiMap = viewModel.getPoiMap().getValue();
             if (poiMap != null) {
                 for (int id : route.poi) {
                     PoiDto poi = poiMap.get(id);
-                    if (poi != null) {
+                    if (poi != null && poi.getPoint() != null) {
                         LatLng ll = new LatLng(poi.getPoint().lat, poi.getPoint().lng);
                         map.addMarker(new MarkerOptions()
                                 .position(ll)
@@ -208,14 +219,20 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
             }
         }
     }
+
+    /* ───────── 카메라 핏 안전 처리 ───────── */
     private void fitBoundsSafe(@NonNull GoogleMap map, @NonNull LatLngBounds bounds) {
-        // 1) 맵 컨테이너(또는 프래그먼트 뷰) 찾기
-        View cont = requireView().findViewById(R.id.detail_map);
-        if (cont == null) {
-            Fragment f = getChildFragmentManager().findFragmentById(R.id.detail_map);
-            cont = (f != null) ? f.getView() : null;
+        if (binding == null) {
+            map.setOnMapLoadedCallback(() -> {
+                try {
+                    map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, dp(24)));
+                } catch (Exception ignore) {}
+            });
+            return;
         }
-        final View containerView = cont;  // ★ 내부 클래스에서 사용할 final 참조
+
+        // layout XML의 id="@+id/detail_map" (SupportMapFragment/FragmentContainerView)
+        final View containerView = requireView().findViewById(R.id.detail_map); // ViewBinding가 생성한 필드명
 
         final int padding = dp(24);
 
@@ -233,29 +250,29 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
                     new ViewTreeObserver.OnGlobalLayoutListener() {
                         @Override public void onGlobalLayout() {
                             containerView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                            CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(
-                                    bounds, containerView.getWidth(), containerView.getHeight(), padding);
-                            map.animateCamera(cu);
+                            try {
+                                CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(
+                                        bounds, containerView.getWidth(), containerView.getHeight(), padding);
+                                map.animateCamera(cu);
+                            } catch (Exception ignore) {}
                         }
                     }
             );
         } else {
-            CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(
-                    bounds, containerView.getWidth(), containerView.getHeight(), padding);
-            map.animateCamera(cu);
+            try {
+                CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(
+                        bounds, containerView.getWidth(), containerView.getHeight(), padding);
+                map.animateCamera(cu);
+            } catch (Exception ignore) {}
         }
-
     }
 
     /** 코스ID로 drawable 리소스가 있으면 반환, 없으면 categoryFallback 반환 */
     private int resolveCourseImage(Context ctx, CourseDto route, int categoryFallback) {
-        // ⚠️ drawable 파일 이름은 'route_<id>.png' 형태로 넣어주세요 (예: route_201.png)
-        // 코스 ID 접근자 이름은 프로젝트에 맞춰 아래 중 하나를 쓰세요.
-        // Integer id = route.getId(); // 또는
-        Integer id = route.getCourse_id(); // ← 이게 없다면 위 라인으로 교체
-
+        // 예) res/drawable/l201.png 형태로 배치되어 있다고 가정 (필요시 이름 규칙 수정)
+        Integer id = route.getCourse_id(); // 프로젝트에 맞게 getter 확인
         if (id != null) {
-            String name = "l" + id; // res/drawable/route_201.png
+            String name = "l" + id;
             int resId = ctx.getResources().getIdentifier(name, "drawable", ctx.getPackageName());
             if (resId != 0) return resId;
         }
@@ -264,5 +281,12 @@ public class CourseDetailFragment extends Fragment implements OnMapReadyCallback
 
     private int dp(int v) {
         return Math.round(v * getResources().getDisplayMetrics().density);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        map = null;
+        binding = null;
     }
 }
